@@ -5,8 +5,11 @@ Options -MultiViews
 # 2. Activer le moteur de réécriture
 RewriteEngine On
 
-# 3. Définir la base (DocumentRoot pointe directement sur DME_HSJM)
-RewriteBase /dme_hospital/
+# 3. Définir la base
+# ⚠️  RÈGLE : DocumentRoot MAMP doit pointer DIRECTEMENT sur le dossier DME_HSJM
+#     → MAMP PRO : Hosts > Document Root = /chemin/vers/DME_HSJM  → RewriteBase /
+#     → Si le projet est dans un sous-dossier /dme_hospital/       → RewriteBase /dme_hospital/
+RewriteBase /
 
 # 4. Support des fichiers DICOM (pour que le navigateur les reconnaisse)
 AddType application/dicom .dcm
