@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/app/views/layouts/header.php';
+require_once __DIR__ . '/../layouts/header.php';
 $demande = $demande ?? [];
 $examens = $examens ?? [];
 
@@ -38,7 +38,7 @@ if (empty($demande)) {
 
 <div class="container-fluid">
     <div class="row">
-        <?php require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/app/views/layouts/sidebar.php'; ?>
+        <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
         
         <main class="col-md-10 ms-sm-auto px-md-4">
             <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -342,4 +342,4 @@ document.getElementById('formResultats').addEventListener('submit', function(e) 
 setInterval(sauvegarderBrouillon, 120000);
 </script>
 
-<?php require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/app/views/layouts/footer.php'; ?>
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>

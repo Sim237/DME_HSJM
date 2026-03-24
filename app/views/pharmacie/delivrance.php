@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../layouts/header.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/config/database.php';
+require_once __DIR__ . '/../../../config/database.php';
 
 // Récupérer ordonnance
 $ordonnance_id = $_GET['id'] ?? $id ?? 0;

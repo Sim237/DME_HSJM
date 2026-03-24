@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/app/views/layouts/header.php';
+require_once __DIR__ . '/../layouts/header.php';
 $examen = $examen ?? [];
 $details = $examen['details'] ?? [];
 // On simule le sexe pour la démo, à récupérer via $examen['sexe']
@@ -8,7 +8,7 @@ $sexe_patient = $examen['sexe'] ?? 'M';
 
 <div class="container-fluid">
     <div class="row">
-        <?php require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/app/views/layouts/sidebar.php'; ?>
+        <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
         
         <main class="col-md-10 ms-sm-auto px-md-4 py-4">
             
@@ -191,4 +191,4 @@ function validerPrelevement(id) {
 }
 </script>
 
-<?php require_once $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/app/views/layouts/footer.php'; ?>
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>
