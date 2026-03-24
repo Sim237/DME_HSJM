@@ -4,277 +4,220 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - DME Hospital</title>
-    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Icônes Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary-blue: #4f46e5;
+            --text-dark: #1e293b;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
+            /* Fond animé dynamique aux couleurs douces */
+            background: linear-gradient(-45deg, #667eea, #764ba2, #2dd4bf, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             overflow: hidden;
+            position: relative;
         }
-        
-        body::before {
-            content: '';
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Effet Gouttes d'eau/Bulles en arrière-plan */
+        .drop {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
-            pointer-events: none;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border-radius: 50%;
+            z-index: 1;
+            animation: float 20s infinite linear;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
+
+        @keyframes float {
+            0% { transform: translateY(110vh) scale(0.8); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-20vh) scale(1.2); opacity: 0; }
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
-            padding: 3rem;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-            width: 100%;
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 35px;
+            padding: 40px;
+            width: 90%;
             max-width: 420px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
             text-align: center;
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
         }
-        
-        .login-header {
-            margin-bottom: 2.5rem;
-        }
-        
-        .logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+
+        .logo-box {
+            background: white;
+            width: 70px;
+            height: 70px;
             border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            color: var(--primary-blue);
+            font-size: 2rem;
+        }
+
+        .login-header h2 {
+            margin: 0;
+            color: var(--text-dark);
+            font-weight: 800;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            margin-left: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-glass {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 14px 18px;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .input-glass:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-modern {
+            background: var(--text-dark);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 15px;
+            width: 100%;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            gap: 10px;
+            margin-top: 10px;
         }
-        
-        .logo i {
-            font-size: 2rem;
-            color: white;
-        }
-        
-        .login-header h1 {
-            color: #1a202c;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        
-        .login-header p {
-            color: #718096;
-            font-size: 0.95rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-            position: relative;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #2d3748;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-        
-        .input-wrapper {
-            position: relative;
-        }
-        
-        .input-wrapper i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #a0aec0;
-            font-size: 1.1rem;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 1rem 1rem 1rem 3rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f7fafc;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .form-group input:focus + i {
-            color: #667eea;
-        }
-        
-        .btn-login {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-login::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .btn-login:hover::before {
-            left: 100%;
-        }
-        
-        .btn-login:hover {
+
+        .btn-modern:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: #000;
         }
-        
-        .error-message {
-            background: linear-gradient(135deg, #fed7d7, #feb2b2);
-            color: #c53030;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #e53e3e;
-            font-weight: 500;
-        }
-        
+
         .roles-info {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #f7fafc, #edf2f7);
-            border-radius: 16px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
             font-size: 0.85rem;
-            color: #4a5568;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .roles-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        
-        .role-badge {
-            background: white;
-            padding: 0.5rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #667eea;
-            border: 1px solid #e2e8f0;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .login-container {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        @media (max-width: 480px) {
-            .login-container {
-                margin: 1rem;
-                padding: 2rem;
-            }
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <!-- Bulles d'eau décoratives -->
+    <div class="drop" style="width:120px; height:120px; left:5%; animation-delay: 0s;"></div>
+    <div class="drop" style="width:80px; height:80px; left:15%; animation-delay: 4s;"></div>
+    <div class="drop" style="width:100px; height:100px; right:10%; animation-delay: 2s;"></div>
+    <div class="drop" style="width:50px; height:50px; right:25%; animation-delay: 7s;"></div>
+
+    <div class="glass-card">
         <div class="login-header">
-            <div class="logo">
-                <i class="fas fa-hospital"></i>
+            <div class="logo-box">
+                <i class="bi bi-hospital"></i>
             </div>
-            <h1>DME Hospital</h1>
-            <p>Système de gestion hospitalière</p>
+            <h2>DME Hospital</h2>
+            <p>Portail de gestion clinique sécurisé</p>
         </div>
-        
+
         <?php if (isset($error)): ?>
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <?= htmlspecialchars($error) ?>
+            <div class="error-msg">
+                <i class="bi bi-exclamation-circle-fill me-2"></i> <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
-        
+
         <form method="POST" action="<?= BASE_URL ?>login">
             <div class="form-group">
-                <label for="identifiant">Email ou nom d'utilisateur</label>
-                <div class="input-wrapper">
-                    <input type="text" id="identifiant" name="identifiant" required>
-                    <i class="fas fa-user"></i>
-                </div>
+                <label>Identifiant</label>
+                <input type="text" name="identifiant" class="input-glass" placeholder="Nom d'utilisateur ou Email" required>
             </div>
-            
+
             <div class="form-group">
-                <label for="password">Mot de passe</label>
-                <div class="input-wrapper">
-                    <input type="password" id="password" name="password" required>
-                    <i class="fas fa-lock"></i>
-                </div>
+                <label>Mot de passe</label>
+                <input type="password" name="password" class="input-glass" placeholder="••••••••" required>
             </div>
-            
-            <button type="submit" class="btn-login">
-                <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem;"></i>
-                Se connecter
+
+            <button type="submit" class="btn-modern">
+                ACCÉDER À MA SESSION <i class="bi bi-arrow-right"></i>
             </button>
         </form>
-        
+
         <div class="roles-info">
-            <strong><i class="fas fa-users"></i> Rôles disponibles</strong>
-            <div class="roles-grid">
-                <div class="role-badge">Administrateur</div>
-                <div class="role-badge">Médecin</div>
-                <div class="role-badge">Infirmier</div>
-                <div class="role-badge">Accueil</div>
-                <div class="role-badge">Pharmacien</div>
-                <div class="role-badge">Laborantin</div>
-                <div class="role-badge">Gestionnaire</div>
-            </div>
+            <p><i class="bi bi-shield-lock-fill me-1"></i> Connexion sécurisée SSL 256-bit</p>
         </div>
     </div>
 </body>

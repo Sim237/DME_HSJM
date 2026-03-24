@@ -482,6 +482,27 @@ case ($request == 'hospitalisation/valider-execution'):
     (new HospitalisationController())->validerExecution();
     break;
 
+
+    // --- ROUTES POUR L'AGENDA MÉDICAL ---
+case ($request == 'agenda'):
+    require_once 'app/controllers/AgendaController.php';
+    (new AgendaController())->index();
+    break;
+
+case ($request == 'agenda/events'):
+    require_once 'app/controllers/AgendaController.php';
+    (new AgendaController())->getEvents();
+    break;
+
+case ($request == 'agenda/save'):
+    require_once 'app/controllers/AgendaController.php';
+    (new AgendaController())->save();
+    break;
+
+case (preg_match('/agenda\/delete\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/AgendaController.php';
+    (new AgendaController())->delete($matches[1]);
+    break;
     /* ============================================================
        DEFAUT : 404
        ============================================================ */

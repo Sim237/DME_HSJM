@@ -85,9 +85,9 @@ include __DIR__ . '/../../layouts/header.php';
                                 <i class="fas fa-arrow-left me-2"></i> Précédent
                             </a>
 
-                            <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill shadow">
-        <i class="bi bi-check-circle-fill me-2"></i> Terminer et Enregistrer
-    </button>
+                            <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill shadow" onclick="this.disabled=true; this.form.submit();">
+    <i class="bi bi-check-circle-fill me-2"></i> Terminer et Enregistrer
+</button>
                         </div>
                     </div>
                 </div>

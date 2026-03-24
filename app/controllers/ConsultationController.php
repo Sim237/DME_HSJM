@@ -195,85 +195,111 @@ public function formulaire() {
      * Sauvegarde d'une étape et passage à la suivante
      */
     public function sauvegarderEtape() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $etape_actuelle = $_POST['etape_actuelle'] ?? 1;
-            $patient_id = $_POST['patient_id'] ?? null;
-            $type = $_POST['type'] ?? 'EXTERNE';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $etape_actuelle = $_POST['etape_actuelle'] ?? 1;
+        $patient_id = $_POST['patient_id'] ?? null;
+        $type = $_POST['type'] ?? 'EXTERNE';
 
-            if (empty($patient_id)) {
-                die("Erreur : L'identifiant du patient a été perdu lors de la sauvegarde. Veuillez recommencer l'étape.");
-            }
-
-            if (!isset($_SESSION['consultation_temp'])) {
-                $_SESSION['consultation_temp'] = [];
-            }
-
-            $_SESSION['consultation_temp'] = array_merge($_SESSION['consultation_temp'], $_POST);
-
-            // Si étape 4 (bilans) avec examens, créer demande laboratoire
-            if ($etape_actuelle == 4 && !empty($_POST['examens'])) {
-                require_once __DIR__ . '/../services/LaboratoireService.php';
-                $laboratoireService = new LaboratoireService();
-
-                // Créer consultation temporaire pour obtenir ID
-                $data = $_SESSION['consultation_temp'];
-                $data['medecin_id'] = $_SESSION['user_id'] ?? 1;
-                $data['date_consultation'] = date('Y-m-d H:i:s');
-                $consultation_id = $this->consultationModel->create($data);
-
-                if ($consultation_id) {
-                    // Créer demande laboratoire
-                    $demande_id = $laboratoireService->creerDemandeExamens($consultation_id, $_POST['examens']);
-                    $_SESSION['consultation_temp']['demande_laboratoire_id'] = $demande_id;
-                }
-            }
-
-            // Si étape 5 (traitement) avec médicaments, créer ordonnance pharmacie
-            if ($etape_actuelle == 5 && !empty($_POST['medicaments'])) {
-                require_once __DIR__ . '/../services/PharmacieService.php';
-                $pharmacieService = new PharmacieService();
-
-                // Utiliser consultation existante ou créer
-                $consultation_id = $_SESSION['consultation_temp']['consultation_id'] ?? null;
-                if (!$consultation_id) {
-                    $data = $_SESSION['consultation_temp'];
-                    $data['medecin_id'] = $_SESSION['user_id'] ?? 1;
-                    $data['date_consultation'] = date('Y-m-d H:i:s');
-                    $consultation_id = $this->consultationModel->create($data);
-                    $_SESSION['consultation_temp']['consultation_id'] = $consultation_id;
-                }
-
-                if ($consultation_id) {
-                    $ordonnance_id = $pharmacieService->creerOrdonnancePharmacie($consultation_id, $_POST['medicaments']);
-                    $_SESSION['consultation_temp']['ordonnance_pharmacie_id'] = $ordonnance_id;
-                }
-            }
-
-            if ($etape_actuelle == 7) {
-                return $this->finaliserConsultation();
-            }
-
-            $next_etape = $etape_actuelle + 1;
-            $url = BASE_URL . "consultation/formulaire?patient_id=$patient_id&type=$type&etape=$next_etape";
-            header("Location: $url");
-            exit;
+        if (empty($patient_id)) {
+            die("Erreur : L'identifiant du patient a été perdu lors de la sauvegarde. Veuillez recommencer l'étape.");
         }
+
+        if (!isset($_SESSION['consultation_temp'])) {
+            $_SESSION['consultation_temp'] = [];
+        }
+
+        // Fusionner les nouvelles données dans la session
+        $_SESSION['consultation_temp'] = array_merge($_SESSION['consultation_temp'], $_POST);
+
+        // Préparer les données communes
+        $data = $_SESSION['consultation_temp'];
+        $data['medecin_id'] = $_SESSION['user_id'] ?? 1;
+        $data['date_consultation'] = $data['date_consultation'] ?? date('Y-m-d H:i:s');
+
+        // --- ÉTAPE 4 : BILANS (LABORATOIRE) ---
+        if ($etape_actuelle == 4 && !empty($_POST['examens'])) {
+            require_once __DIR__ . '/../services/LaboratoireService.php';
+            $laboratoireService = new LaboratoireService();
+
+            // ANTI-DOUBLON : On crée ou on met à jour
+            if (!isset($_SESSION['consultation_temp']['consultation_id'])) {
+                $consultation_id = $this->consultationModel->create($data);
+                $_SESSION['consultation_temp']['consultation_id'] = $consultation_id; // ON SAUVEGARDE L'ID
+            } else {
+                $consultation_id = $_SESSION['consultation_temp']['consultation_id'];
+                $this->consultationModel->update($consultation_id, $data);
+            }
+
+            if ($consultation_id) {
+                $laboratoireService->creerDemandeExamens($consultation_id, $_POST['examens']);
+            }
+        }
+
+        // --- ÉTAPE 5 : TRAITEMENT (PHARMACIE) ---
+        if ($etape_actuelle == 5 && !empty($_POST['medicaments'])) {
+            require_once __DIR__ . '/../services/PharmacieService.php';
+            $pharmacieService = new PharmacieService();
+
+            // ANTI-DOUBLON : On utilise l'ID existant (de l'étape 4) ou on crée
+            if (!isset($_SESSION['consultation_temp']['consultation_id'])) {
+                $consultation_id = $this->consultationModel->create($data);
+                $_SESSION['consultation_temp']['consultation_id'] = $consultation_id;
+            } else {
+                $consultation_id = $_SESSION['consultation_temp']['consultation_id'];
+                $this->consultationModel->update($consultation_id, $data);
+            }
+
+            if ($consultation_id) {
+                $pharmacieService->creerOrdonnancePharmacie($consultation_id, $_POST['medicaments']);
+            }
+        }
+
+        // --- ÉTAPE 7 : FINALISATION ---
+        if ($etape_actuelle == 7) {
+            return $this->finaliserConsultation();
+        }
+
+        // Navigation vers l'étape suivante
+        $next_etape = $etape_actuelle + 1;
+        $url = BASE_URL . "consultation/formulaire?patient_id=$patient_id&type=$type&etape=$next_etape";
+        header("Location: $url");
+        exit;
     }
+}
 
     /**
      * Enregistrement final en base de données
      */
-     private function finaliserConsultation() {
+   private function finaliserConsultation() {
+    if (!isset($_SESSION['consultation_temp'])) {
+        header('Location: ' . BASE_URL . 'dashboard');
+        exit;
+    }
+
     $data = $_SESSION['consultation_temp'];
     $db = $this->db;
 
-    $consultation_id = $this->consultationModel->create($data);
+    // --- LOGIQUE ANTI-DOUBLON ---
+    // On vérifie si un ID de consultation existe déjà en session (créé à l'étape 4 ou 5)
+    $consultation_id = $data['consultation_id'] ?? null;
 
     if ($consultation_id) {
-      // On change le statut du parcours pour qu'il sorte de la file d'attente "Patients en attente"
-        $stmtUpdate = $db->prepare("UPDATE patients SET statut_parcours = 'EN_CONSULTATION' WHERE id = ?");
-        $stmtUpdate->execute([$data['patient_id']]);
-        // --- LOGIQUE RENDEZ-VOUS ---
+        // Si l'ID existe, on MET À JOUR la ligne existante au lieu d'en créer une nouvelle
+        $this->consultationModel->update($consultation_id, $data);
+    } else {
+        // Sinon, on crée la consultation (cas où le médecin n'a demandé ni labo ni pharmacie)
+        $consultation_id = $this->consultationModel->create($data);
+    }
+
+    if ($consultation_id) {
+        // 1. On sort le patient de la file d'attente
+        // S'il y a un RDV, il va à l'ACCUEIL, sinon il est considéré comme SORTI
+        $nouveauStatut = !empty($data['date_suivi']) ? 'ACCUEIL' : 'SORTI';
+
+        $stmtUpdate = $db->prepare("UPDATE patients SET statut_parcours = ?, statut_hosp = 'AUCUN' WHERE id = ?");
+        $stmtUpdate->execute([$nouveauStatut, $data['patient_id']]);
+
+        // 2. LOGIQUE RENDEZ-VOUS
         if (!empty($data['date_suivi'])) {
             $stmtRDV = $db->prepare("INSERT INTO patient_rdv (patient_id, medecin_id, date_rdv, motif, statut)
                                      VALUES (?, ?, ?, ?, 'CONFIRME')");
@@ -283,17 +309,17 @@ public function formulaire() {
                 $data['date_suivi'],
                 $data['motif_suivi'] ?? 'Suivi médical'
             ]);
-
-            // IMPORTANT : On remet le patient en statut 'ACCUEIL' pour qu'il apparaisse sur la liste de la secrétaire
-            // même s'il vient de finir sa consultation actuelle.
-            $stmtStatus = $db->prepare("UPDATE patients SET statut_parcours = 'ACCUEIL' WHERE id = ?");
-            $stmtStatus->execute([$data['patient_id']]);
         }
 
-        // 3. Règle de l'heure (Hospitaliser)
-        $this->db->prepare("UPDATE consultations SET wait_hospital_until = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?")
+        // 3. Règle de l'heure (Hospitaliser) et Date de clôture
+        $this->db->prepare("UPDATE consultations SET
+                            wait_hospital_until = DATE_ADD(NOW(), INTERVAL 1 HOUR),
+                            date_cloture = NOW(),
+                            statut = 'terminee'
+                            WHERE id = ?")
                  ->execute([$consultation_id]);
 
+        // 4. Nettoyage et redirection
         unset($_SESSION['consultation_temp']);
         header('Location: ' . BASE_URL . 'dashboard?success=consult_saved');
         exit;
