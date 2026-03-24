@@ -509,6 +509,11 @@ case ($request == 'imagerie'):
     (new ImagerieController())->index(); // Votre vue index
     break;
 
+case ($request == 'imagerie/upload'):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->upload();
+    break;
+
 case (preg_match('/imagerie\/viewer\/(\d+)/', $request, $matches)):
     require_once 'app/controllers/ImagerieController.php';
     (new ImagerieController())->viewer($matches[1]);
