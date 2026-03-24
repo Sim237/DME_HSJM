@@ -1,0 +1,73 @@
+/* ============================================================================
+   ICÔNES CSS MODERNES - Remplacement Font Awesome
+============================================================================ */
+
+.icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    fill: currentColor;
+}
+
+/* Icônes principales */
+.icon-dashboard::before { content: "📊"; }
+.icon-users::before { content: "👥"; }
+.icon-stethoscope::before { content: "🩺"; }
+.icon-bed::before { content: "🛏️"; }
+.icon-ambulance::before { content: "🚑"; }
+.icon-flask::before { content: "🧪"; }
+.icon-pills::before { content: "💊"; }
+.icon-xray::before { content: "🩻"; }
+.icon-comments::before { content: "💬"; }
+.icon-heart::before { content: "❤️"; }
+.icon-graduation::before { content: "🎓"; }
+.icon-settings::before { content: "⚙️"; }
+.icon-chart::before { content: "📈"; }
+.icon-invoice::before { content: "🧾"; }
+.icon-logout::before { content: "🚪"; }
+.icon-bell::before { content: "🔔"; }
+.icon-user::before { content: "👤"; }
+.icon-plus::before { content: "➕"; }
+.icon-search::before { content: "🔍"; }
+.icon-arrow-left::before { content: "←"; }
+.icon-shield::before { content: "🛡️"; }
+.icon-clock::before { content: "🕐"; }
+.icon-file-medical::before { content: "📋"; }
+.icon-exclamation::before { content: "⚠️"; }
+.icon-check::before { content: "✅"; }
+
+/* Styles pour les icônes */
+[class*="icon-"]::before {
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+    font-size: 1.2em;
+}
+
+/* Alternatives textuelles si émojis non supportés */
+@supports not (font-family: "Apple Color Emoji") {
+    .icon-dashboard::before { content: "■"; }
+    .icon-users::before { content: "👥"; }
+    .icon-stethoscope::before { content: "♡"; }
+    .icon-bed::before { content: "▬"; }
+    .icon-ambulance::before { content: "+"; }
+    .icon-flask::before { content: "⚗"; }
+    .icon-pills::before { content: "○"; }
+    .icon-comments::before { content: "💬"; }
+    .icon-heart::before { content: "♥"; }
+    .icon-graduation::before { content: "🎓"; }
+    .icon-settings::before { content: "⚙"; }
+    .icon-chart::before { content: "📊"; }
+    .icon-logout::before { content: "→"; }
+    .icon-bell::before { content: "🔔"; }
+    .icon-user::before { content: "👤"; }
+    .icon-plus::before { content: "+"; }
+    .icon-search::before { content: "🔍"; }
+    .icon-arrow-left::before { content: "←"; }
+    .icon-shield::before { content: "🛡"; }
+    .icon-clock::before { content: "⏰"; }
+    .icon-exclamation::before { content: "!"; }
+    .icon-check::before { content: "✓"; }
+}

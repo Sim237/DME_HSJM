@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DME Hospital - Test</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link href="/dme_hospital/public/css/style.css" rel="stylesheet">
+    <link href="/dme_hospital/public/css/responsive.css" rel="stylesheet">
+    <link href="/dme_hospital/public/css/dashboard.css" rel="stylesheet">
+    <link href="/dme_hospital/public/css/consultation-forms.css" rel="stylesheet">
+    <link href="/dme_hospital/public/css/fix.css" rel="stylesheet">
+</head>
+<body>
+
+    <style>
+        /* ============ RÈGLES D'IMPRESSION PRINCIPALES ============ */
+        @page {
+            size: A4;
+            margin: 5mm;
+            orphans: 0;
+            widows: 0;
+        }
+        
+        @media print {
+            * { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                line-height: 1 !important;
+                color: black !important;
+                background: white !important;
+            }
+            html, body { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                font-size: 8px !important; 
+                width: 100% !important;
+                height: auto !important;
+            }
+            .no-print { display: none !important; }
+            .page-break { page-break-inside: avoid; }
+            .d-flex { display: block !important; }
+            .me-auto { margin-right: 0 !important; }
+            .me-1, .me-2, .me-3, .me-4, .me-5 { margin-right: 0 !important; }
+            .me-auto { margin-right: 0 !important; }
+            .ms-1, .ms-2, .ms-3, .ms-4, .ms-5 { margin-left: 0 !important; }
+            .p-0, .p-1, .p-2, .p-3, .p-4, .p-5 { padding: 0 !important; }
+            .m-0, .m-1, .m-2, .m-3, .m-4, .m-5 { margin: 0 !important; }
+            [class*="col-"] { width: 100% !important; float: none !important; margin: 0 !important; }
+            .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
+                width: 100% !important;
+                max-width: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .row { display: block !important; }
+            .btn { display: none !important; }
+            .navbar, .sidebar, .footer, nav, aside { display: none !important; }
+        }
+        
+        /* ============ STYLES DE CONTENU IMPRESSION ============ */
+        .print-wrapper { 
+            max-width: 900px; 
+            margin: 18px auto; 
+            padding: 18px; 
+            background: #fff; 
+            border-radius: 6px; 
+            font-family: Arial, sans-serif;
+        }
+        .print-wrapper { 
+            border: 1px solid #e6edf6; 
+            box-shadow: 0 6px 18px rgba(16,24,40,0.08); 
+        }
+        
+        @media print {
+            .print-wrapper { 
+                max-width: 100% !important; 
+                margin: 0 !important; 
+                padding: 2mm !important; 
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                background: white !important;
+                page-break-after: avoid;
+            }
+        }
+        
+        .print-header { 
+            text-align: center; 
+            border-bottom: 2px solid #0d6efd; 
+            padding-bottom: 2px; 
+            margin-bottom: 3px; 
+        }
+        
+        @media print {
+            .print-header { 
+                margin-bottom: 1px !important;
+                padding-bottom: 1px !important;
+                border-bottom: 1px solid #000 !important;
+            }
+        }
+        
+        .print-header h1 { 
+            color: #0d6efd; 
+            margin: 0; 
+            font-size: 24px; 
+            letter-spacing: 0.5px; 
+            font-weight: bold;
+        }
+        
+        @media print {
+            .print-header h1 { 
+                font-size: 10px !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                color: black !important;
+            }
+        }
+        
+        .print-sub { 
+            color: #666; 
+            margin: 3px 0; 
+            font-size: 12px; 
+        }
+        
+        @media print {
+            .print-sub { display: none !important; }
+        }
+        
+        .prescription-meta { 
+            margin: 6px 0 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        @media print {
+            .prescription-meta { 
+                margin: 1px 0 !important; 
+                padding: 0 !important;
+                display: block !important;
+            }
+        }
+        
+        .doctor-line { 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            font-size: 13px; 
+        }
+        
+        @media print {
+            .doctor-line { 
+                font-size: 8px !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                font-weight: normal !important;
+            }
+        }
+        
+        .patient-card { 
+            background: #f8f9fa; 
+            padding: 12px; 
+            border-radius: 6px; 
+            margin-bottom: 8px; 
+        }
+        
+        @media print {
+            .patient-card { 
+                padding: 1px !important; 
+                margin-bottom: 1px !important; 
+                background: white !important; 
+                border: none !important;
+            }
+        }
+        
+        .patient-card .left, 
+        .patient-card .right { 
+            vertical-align: top; 
+            display: inline-block; 
+            width: 49%; 
+        }
+        
+        .patient-card p { 
+            margin: 2px 0; 
+            font-size: 12px; 
+        }
+        
+        @media print {
+            .patient-card p { 
+                margin: 0 !important; 
+                padding: 0 !important;
+                font-size: 7px !important; 
+                line-height: 1 !important;
+            }
+        }
+        
+        .patient-card h5 { 
+            margin: 0; 
+            font-size: 12px; 
+        }
+        
+        @media print {
+            .patient-card h5 { 
+                font-size: 8px !important; 
+                margin: 0 !important;
+                font-weight: bold !important;
+            }
+        }
+        
+        .prescription-title { 
+            color: #0d6efd; 
+            font-size: 18px; 
+            margin: 8px 0 6px; 
+            border-bottom: 2px solid #0d6efd; 
+            padding-bottom: 2px; 
+        }
+        
+        @media print {
+            .prescription-title { 
+                font-size: 8px !important; 
+                margin: 1px 0 !important; 
+                padding-bottom: 0.5px !important; 
+                border-bottom: 0.5px solid #000 !important;
+                color: black !important;
+                font-weight: bold !important;
+            }
+        }
+        
+        .med-card { 
+            border: 1px solid #dee2e6; 
+            border-radius: 4px; 
+            padding: 8px; 
+            margin-bottom: 8px; 
+            background: #fff; 
+            page-break-inside: avoid; 
+        }
+        
+        @media print {
+            .med-card { 
+                padding: 1px !important; 
+                margin-bottom: 1px !important; 
+                border: 0.5px solid #999 !important; 
+                page-break-inside: avoid !important;
+                background: white !important;
+            }
+        }
+        
+        .med-card h4 { 
+            margin: 0 0 4px 0; 
+            font-size: 13px; 
+        }
+        
+        @media print {
+            .med-card h4 { 
+                font-size: 7px !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                font-weight: bold !important;
+            }
+        }
+        
+        .med-meta { 
+            color: #333; 
+            margin-bottom: 3px; 
+            font-size: 11px; 
+        }
+        
+        @media print {
+            .med-meta { 
+                font-size: 6px !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                color: black !important;
+            }
+        }
+        
+        .med-card div { 
+            font-size: 12px; 
+            margin: 2px 0; 
+        }
+        
+        @media print {
+            .med-card div { 
+                font-size: 6px !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                line-height: 1 !important;
+            }
+        }
+        
+        .reco { 
+            background: #fff3cd; 
+            border-left: 4px solid #ffc107; 
+            padding: 8px; 
+            border-radius: 4px; 
+            margin-top: 6px; 
+        }
+        
+        @media print {
+            .reco { 
+                padding: 1px !important; 
+                margin: 1px 0 !important; 
+                border: none !important;
+                background: white !important;
+            }
+        }
+        
+        .reco h5 { 
+            margin: 4px 0; 
+            font-size: 12px; 
+        }
+        
+        @media print {
+            .reco h5 { 
+                margin: 0 !important; 
+                padding: 0 !important;
+                font-size: 7px !important;
+                font-weight: bold !important;
+            }
+        }
+        
+        .reco p { 
+            margin: 4px 0; 
+            font-size: 11px; 
+        }
+        
+        @media print {
+            .reco p { 
+                margin: 0 !important; 
+                padding: 0 !important;
+                font-size: 6px !important; 
+                line-height: 1 !important;
+            }
+        }
+        
+        .footer-sign { 
+            margin-top: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+        }
+        
+        @media print {
+            .footer-sign { 
+                margin-top: 1px !important; 
+                padding: 0 !important;
+                display: block !important;
+            }
+        }
+        
+        .footer-sign .signature { 
+            border: 1px dashed #ccc; 
+            height: 40px; 
+            width: 50%; 
+            margin-left: auto; 
+            text-align: center; 
+            padding-top: 2px; 
+            font-size: 8px; 
+        }
+        
+        @media print {
+            .footer-sign .signature { 
+                height: 10px !important; 
+                padding: 0 !important; 
+                font-size: 6px !important; 
+                border: 0.5px solid #000 !important;
+                margin-top: 1px !important;
+                width: 100% !important;
+            }
+        }
+        
+        .footer-disclaimer { 
+            margin-top: 18px; 
+            text-align: center; 
+            font-size: 11px; 
+            color: #666; 
+        }
+        
+        @media print {
+            .footer-disclaimer { 
+                margin: 1px 0 !important; 
+                padding: 0 !important;
+                font-size: 5px !important; 
+                line-height: 1 !important;
+                color: black !important;
+            }
+        }
+    </style>
+
+    
+    <div class="print-wrapper">
+
+    <div class="no-print" style="margin-bottom:18px;">
+        <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimer</button>
+        <button class="btn btn-secondary" onclick="window.history.back()"><i class="bi bi-arrow-left"></i> Retour</button>
+    </div>
+
+    <div class="print-header">
+        <h1>DME HOSPITAL</h1>
+        <div class="print-sub">Centre Hospitalier Universitaire</div>
+        <div class="print-sub">Adresse: Yaoundé, Cameroun | Tél: +237 XXX XXX XXX</div>
+    </div>
+
+    <div class="d-flex prescription-meta">
+        <div class="me-auto doctor-line">Dr. House Gregory — <em>Médecine Interne</em></div>
+        <div style="text-align:right;">
+            <div><strong>Ordonnance N°:</strong> #000001</div>
+            <div><strong>Date:</strong> 19/02/2026 à 11:00</div>
+        </div>
+    </div>
+
+    <div class="patient-card">
+        <div class="left">
+            <h5 style="color:#0d6efd; margin-top:0;">PATIENT</h5>
+            <p><strong>Nom:</strong> MEBARA Jean</p>
+            <p><strong>Dossier N°:</strong> P-2023-00002</p>
+        </div>
+        <div class="right" style="text-align:right;">
+            <p><strong>Date de naissance:</strong> 07/11/1990</p>
+            <p><strong>Sexe:</strong> Masculin</p>
+        </div>
+        <div style="clear:both"></div>
+    </div>
+
+    <div>
+        <div class="prescription-title">PRESCRIPTION</div>
+
+                                <div class="med-card page-break">
+                <h4>1. Amoxicilline</h4>
+                <div class="med-meta"><strong>Forme:</strong> Gélule &nbsp; - &nbsp; <strong>Dosage:</strong> 1g</div>
+                <div><strong>Posologie:</strong> 1 g toutes les 8 heures</div>
+                <div><strong>Durée:</strong> 7 jours</div>                <div><strong>Fréquence:</strong> 3/jour</div>                            </div>
+                        <div class="med-card page-break">
+                <h4>2. Paracétamol</h4>
+                <div class="med-meta"><strong>Forme:</strong> Gélule &nbsp; - &nbsp; <strong>Dosage:</strong> 50mg</div>
+                <div><strong>Posologie:</strong> 1 comprimé si douleur</div>
+                                                            </div>
+                        <div class="med-card page-break">
+                <h4>3. Ceftriaxone</h4>
+                <div class="med-meta"><strong>Forme:</strong> Injectable &nbsp; - &nbsp; <strong>Dosage:</strong> 40mg</div>
+                <div><strong>Posologie:</strong> IM une fois par jour</div>
+                <div><strong>Durée:</strong> 3 jours</div>                <div><strong>Fréquence:</strong> 1/jour</div>                            </div>
+                        </div>
+
+        <div class="reco">
+        <h5 style="margin-top:0;">Recommandations:</h5>
+        <p>Prendre beaucoup d&#039;eau. Repos.</p>
+    </div>
+    
+    <div class="footer-sign">
+        <div></div>
+        <div class="signature">
+            <div style="margin-top:8px;">Signature et Cachet du Médecin</div>
+            <div style="margin-top:8px; font-weight:600;">Dr. House</div>
+        </div>
+    </div>
+
+    <div class="footer-disclaimer">
+        <div>Valable 3 mois | Duplicata sur présentation pièce d'identité</div>
+    </div>
+
+    </div> <!-- /.print-wrapper -->
+
+    
+</body>
+</html>

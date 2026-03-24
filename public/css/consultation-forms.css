@@ -1,0 +1,484 @@
+/* ============================================================================
+FICHIER : public/css/consultation-forms.css
+Styles modernes pour les formulaires de consultation - DME Hospital
+============================================================================ */
+
+/* ===== CONSULTATION LAYOUT ===== */
+.consultation-form {
+    padding: 24px 32px;
+    background: var(--bg-base);
+}
+
+/* ===== PROGRESS BAR MODERNE ===== */
+.consultation-progress {
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-sm);
+}
+
+.progress-header h4 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.progress-header .badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    margin-left: 8px;
+    font-family: var(--font-heading);
+    letter-spacing: 0.3px;
+}
+
+.progress-header .badge.bg-secondary {
+    background: var(--neutral-700) !important;
+    color: white;
+}
+
+.progress-header .badge.bg-info {
+    background: linear-gradient(135deg, var(--info-600), var(--info-700)) !important;
+    color: white;
+}
+
+.progress-header .badge.bg-warning {
+    background: linear-gradient(135deg, var(--warning-500), var(--warning-600)) !important;
+    color: white;
+}
+
+/* Progress Steps Navigation (Tabs Style) */
+.progress-steps {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.progress-steps > div {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-heading);
+    text-align: center;
+    transition: all var(--transition-base);
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    border: 1.5px solid transparent;
+}
+
+.progress-steps > div.text-muted {
+    background: var(--neutral-50);
+    color: var(--text-tertiary);
+    border-color: var(--border-subtle);
+}
+
+.progress-steps > div.fw-bold.text-primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    box-shadow: 0 4px 12px rgba(34, 76, 152, 0.3);
+    border-color: var(--primary-600);
+}
+
+.progress-steps > div:not(.fw-bold):hover {
+    background: var(--primary-50);
+    border-color: var(--primary-300);
+    color: var(--primary-600);
+}
+
+/* Visual Progress Indicator */
+.progress-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.progress-indicator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--neutral-200);
+    transform: translateY(-50%);
+    z-index: 0;
+}
+
+.progress-step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 3px solid var(--neutral-300);
+    color: var(--text-tertiary);
+    font-weight: 700;
+    font-size: 14px;
+    font-family: var(--font-heading);
+    position: relative;
+    z-index: 1;
+    transition: all var(--transition-smooth);
+}
+
+.progress-step.completed {
+    background: var(--success-500);
+    border-color: var(--success-500);
+    color: white;
+}
+
+.progress-step.completed::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+}
+
+.progress-step.active {
+    background: var(--primary-500);
+    border-color: var(--primary-500);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(34, 76, 152, 0.2);
+    transform: scale(1.15);
+}
+
+/* ===== FORM SECTIONS ===== */
+.form-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+    transition: all var(--transition-smooth);
+}
+
+.form-section:hover {
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-md);
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--info-50) 100%);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.form-section-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(34, 76, 152, 0.3);
+}
+
+.form-section-title {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary-700);
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.form-section-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+    font-weight: 500;
+}
+
+/* ===== FORM GROUPS ===== */
+.form-group-modern {
+    padding: 24px;
+}
+
+.form-group-modern label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.form-group-modern label.required::after {
+    content: '*';
+    color: var(--danger-500);
+    margin-left: 4px;
+    font-weight: 700;
+}
+
+/* Modern Form Controls */
+.form-control-modern,
+.textarea-modern {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    transition: all var(--transition-base);
+    resize: vertical;
+}
+
+.textarea-modern {
+    min-height: 100px;
+    line-height: 1.6;
+}
+
+.form-control-modern:focus,
+.textarea-modern:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(34, 76, 152, 0.1);
+    background: white;
+}
+
+.form-control-modern::placeholder,
+.textarea-modern::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ===== FORM ACTIONS ===== */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 0;
+    margin-top: 24px;
+}
+
+.btn-primary-modern,
+.btn-secondary-modern {
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    font-family: var(--font-heading);
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+}
+
+.btn-primary-modern {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    box-shadow: 0 2px 8px rgba(34, 76, 152, 0.3);
+}
+
+.btn-primary-modern:hover {
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+    box-shadow: 0 4px 16px rgba(34, 76, 152, 0.4);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-secondary-modern {
+    background: var(--neutral-100);
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border-default);
+}
+
+.btn-secondary-modern:hover {
+    background: var(--neutral-200);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.btn-primary-modern:active,
+.btn-secondary-modern:active {
+    transform: scale(0.98);
+}
+
+/* ===== CARD OVERRIDE FOR CONSULTATION ===== */
+.consultation-form .card {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.consultation-form .card-header {
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+    border: none;
+    padding: 20px 24px;
+    color: white;
+}
+
+.consultation-form .card-header h5 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 18px;
+    color: white;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.consultation-form .card-header i {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.consultation-form .card-body {
+    padding: 28px;
+    background: var(--bg-base);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .consultation-form {
+        padding: 16px;
+    }
+    
+    .consultation-progress {
+        padding: 16px;
+    }
+    
+    .progress-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+    
+    .progress-steps {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .progress-steps > div {
+        font-size: 11px;
+        padding: 10px 12px;
+    }
+    
+    .progress-indicator {
+        display: none;
+    }
+    
+    .form-section-header {
+        padding: 16px 20px;
+        gap: 12px;
+    }
+    
+    .form-section-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .form-section-title {
+        font-size: 12px;
+    }
+    
+    .form-section-subtitle {
+        font-size: 12px;
+    }
+    
+    .form-group-modern {
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-primary-modern,
+    .btn-secondary-modern {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .consultation-form .card-body {
+        padding: 20px;
+    }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-section {
+    animation: slideIn 0.4s ease-out;
+}
+
+.form-section:nth-child(1) { animation-delay: 0.1s; }
+.form-section:nth-child(2) { animation-delay: 0.2s; }
+.form-section:nth-child(3) { animation-delay: 0.3s; }
+.form-section:nth-child(4) { animation-delay: 0.4s; }
+
+/* ===== UTILITIES ===== */
+.consultation-form .text-primary {
+    color: var(--primary-600) !important;
+}
+
+.consultation-form .text-muted {
+    color: var(--text-tertiary) !important;
+}
+
+.consultation-form .fw-bold {
+    font-weight: 700 !important;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .progress-indicator,
+    .form-actions,
+    .btn-primary-modern,
+    .btn-secondary-modern {
+        display: none !important;
+    }
+    
+    .form-section {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
+    
+    .form-section-header {
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

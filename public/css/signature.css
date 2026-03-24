@@ -1,0 +1,27 @@
+#signatureCanvas {
+    background: white;
+    touch-action: none;
+}
+
+.nav-tabs .nav-link {
+    color: #667eea;
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+#sigPreview, #signaturePreview {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#sigPreviewImg, #previewImg {
+    border-radius: 8px;
+}
+
+.card-header {
+    font-weight: 600;
+}

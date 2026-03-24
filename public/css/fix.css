@@ -1,0 +1,24 @@
+/* FIX URGENCE - Supprimer tous les overlays bloquants */
+.modal-backdrop.show {
+    z-index: 1040 !important;
+}
+
+.modal.show {
+    z-index: 1050 !important;
+    display: block !important;
+}
+
+body.modal-open {
+    overflow: hidden !important;
+}
+
+.sidebar {
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+/* Forcer tous les boutons et liens à être cliquables */
+a, button, .btn, .nav-link {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
