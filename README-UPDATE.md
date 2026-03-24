@@ -216,6 +216,105 @@ Tous ces mots de passe DOIVENT être changés. Ne jamais déployer avec `admin12
 
 ---
 
+---
+
+### [2026-03-24] — Correction chevauchement sidebar / contenu au redimensionnement
+
+| Champ | Détail |
+|-------|--------|
+| **Date** | 2026-03-24 |
+| **Auteur** | Claude (assistant IA) |
+| **Type** | Correction de bug CSS |
+| **Impact** | UX — sidebar chevauchait le contenu en dessous de 992px |
+
+**3 bugs identifiés et corrigés :**
+
+**Bug 1 — `public/css/style.css` ligne ~1041 :**
+```css
+/* AVANT — Cassait margin-left en le mettant à 100% de la page ! */
+@media (max-width: 992px) {
+    :root { --sidebar-width: 100%; }  ← BUG CRITIQUE
+}
+
+/* APRÈS — Supprimé, inutile et dangereux */
+```
+
+**Bug 2 — `public/css/style.css` ligne ~1037 :**
+```css
+/* AVANT — Ciblait le tag <main>, pas la div .main-content */
+main { margin-left: 0; }
+
+/* APRÈS — Cible les deux */
+main, .main-content { margin-left: 0 !important; }
+```
+
+**Bug 3 — `app/views/layouts/topbar.php` ligne 5 :**
+```html
+<!-- AVANT — Caché dès 768px alors que la sidebar se ferme à 992px -->
+<button class="d-md-none" ...>
+
+<!-- APRÈS — Visible jusqu'à 992px -->
+<button class="d-lg-none" id="sidebarToggleBtn" ...>
+```
+
+**Fichiers modifiés :**
+- `public/css/style.css` — section `@media (max-width: 992px)` entièrement réécrite
+- `public/css/responsive.css` — section tablet mise à jour
+- `app/views/layouts/topbar.php` — bouton hamburger corrigé + JS sidebar toggle ajouté
+
+**Fonctionnalités ajoutées :**
+- Transition fluide sur la sidebar
+- Overlay sombre cliquable pour fermer la sidebar sur mobile/tablette
+- Blocage du scroll body quand la sidebar est ouverte en mobile
+- Fermeture automatique de la sidebar au redimensionnement vers desktop (≥ 992px)
+
+---
+
+---
+
+### [2026-03-24] — Mise en place système .env — suppression credentials hardcodés
+
+| Champ | Détail |
+|-------|--------|
+| **Date** | 2026-03-24 |
+| **Auteur** | Claude (assistant IA) |
+| **Type** | Refactoring critique / Sécurité |
+| **Impact** | Chaque développeur gère ses propres credentials locaux |
+
+**Problème résolu :**
+Les credentials MySQL (`DB_PASS=root`) et l'URL (`BASE_URL`) étaient hardcodés dans les fichiers PHP et commités sur git. Quand un développeur récupérait les modifications, son application se cassait car ses credentials sont différents.
+
+**Fichiers créés :**
+- `.env.example` — Template commité sur git (valeurs vides / exemples)
+- `.env` — Fichier local par développeur (**JAMAIS commité**, dans .gitignore)
+- `.gitignore` — Protège .env, uploads patients, logs, node_modules
+
+**Fichiers modifiés :**
+- `config/config.php` — Charge les variables depuis `.env` via `loadEnv()`
+- `config/database.php` — Lit DB_HOST/DB_NAME/DB_USER/DB_PASS depuis les constantes
+
+**⚠️ ACTION REQUISE POUR CHAQUE DÉVELOPPEUR :**
+```bash
+# 1. Après un git pull, si le fichier .env n'existe pas encore :
+cp .env.example .env
+
+# 2. Éditer .env avec ses propres valeurs :
+DB_PASS=VotreMotDePasseMySQL
+BASE_URL=http://localhost:8080/    # ou /DME_HSJM/ selon votre config MAMP
+
+# 3. Ne JAMAIS faire : git add .env
+```
+
+**Configuration par profil développeur :**
+
+| Développeur | DB_PASS | BASE_URL |
+|-------------|---------|----------|
+| Toi (MAMP racine) | `root` | `http://localhost:8080/` |
+| Collègue (MAMP) | `Franck@2903` | `http://localhost:8080/dme_hospital/` |
+| Production | `[mot de passe serveur]` | `https://[domaine]/` |
+
+---
+
 ## Améliorations identifiées / À faire
 
 | # | Description | Priorité | Statut |

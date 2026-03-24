@@ -140,9 +140,15 @@ Responsive Design Breakpoints - DME Hospital
     .stat-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
+    /* La sidebar est masquée (<992px) — plus besoin de marge sur le contenu */
     .sidebar {
-        width: 240px;
+        width: 260px; /* Conserver la largeur normale quand elle est ouverte via toggle */
+    }
+
+    main,
+    .main-content {
+        margin-left: 0 !important;
     }
 }
 
