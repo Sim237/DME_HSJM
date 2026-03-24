@@ -1,0 +1,45 @@
+# ============================================================
+# .gitignore — DME Hospital HSJM
+# ============================================================
+
+# --- CONFIGURATION LOCALE (ne JAMAIS commiter) ---
+.env
+config/config.local.php
+
+# --- UPLOADS & FICHIERS PATIENTS (données sensibles) ---
+assets/uploads/dicom/*
+assets/uploads/previews/*
+assets/uploads/documents/*
+assets/uploads/signatures/*
+!assets/uploads/dicom/.gitkeep
+!assets/uploads/previews/.gitkeep
+!assets/uploads/documents/.gitkeep
+!assets/uploads/signatures/.gitkeep
+
+# --- LOGS ---
+*.log
+logs/
+
+# --- SYSTÈME ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- NODE (si microservice DICOM futur) ---
+node_modules/
+dicom-service/node_modules/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- BACKUPS & TEMP ---
+*.bak
+*.tmp
+*.temp
+# Ajouter dans .gitignore
+config/config.php
+config/database.php
+.env

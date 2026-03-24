@@ -1,8 +1,8 @@
 <header class="topbar">
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center">
-            <!-- Bouton Menu Mobile -->
-            <button class="btn btn-link d-md-none p-0 me-3" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <!-- Bouton Menu Mobile/Tablette (visible sous 992px) -->
+            <button class="btn btn-link d-lg-none p-0 me-3" type="button" id="sidebarToggleBtn" aria-label="Ouvrir le menu">
                 <i class="bi bi-list fs-4 text-dark"></i>
             </button>
             
@@ -85,6 +85,58 @@
 </header>
 
 <script>
+// ===== TOGGLE SIDEBAR MOBILE/TABLETTE =====
+(function() {
+    // Créer l'overlay au premier chargement
+    if (!document.getElementById('sidebarOverlay')) {
+        const overlay = document.createElement('div');
+        overlay.id = 'sidebarOverlay';
+        overlay.className = 'sidebar-overlay';
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', function() {
+            closeSidebar();
+        });
+    }
+
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            const sidebar  = document.querySelector('.sidebar');
+            const overlay  = document.getElementById('sidebarOverlay');
+            if (sidebar && sidebar.classList.contains('show')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    function openSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    // Fermer la sidebar si on passe en desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            closeSidebar();
+        }
+    });
+})();
+
+// ===== RECHERCHE GLOBALE =====
 // Logique JS de la recherche globale
 const searchInput = document.getElementById('globalSearchInput');
 const searchResults = document.getElementById('globalSearchResults');

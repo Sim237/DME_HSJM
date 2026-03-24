@@ -1,8 +1,13 @@
 <?php
-// Ne pas démarrer la session ici car elle est déjà démarrée dans index.php
+/* ============================================================
+ * FICHIER : config/config.php
+ * Configuration centrale — charge les variables depuis .env
+ * Chaque développeur a son propre .env (non commité sur git)
+ * ============================================================ */
+
 date_default_timezone_set('Africa/Douala');
 
-define('BASE_URL', 'http://localhost:8080/dme_hospital/');
+define('BASE_URL', 'http://localhost:8080/');
 define('UPLOAD_PATH', __DIR__ . '/../assets/uploads/');
 
 // ==================================================================
@@ -16,15 +21,16 @@ define('DB_USER', 'root');
 // Si vous êtes sur XAMPP (Windows) : Laissez vide ''
 // Si vous êtes sur MAMP (Mac) : Mettez 'root'
 // Si vous avez défini un mot de passe personnel : Mettez-le ici
-define('DB_PASS', 'root');
+define('DB_PASS', 'root'); // Mot de passe MySQL local MAMP (défaut)
 
 // ==================================================================
 // CONFIGURATION GÉNÉRALE
 // ==================================================================
 $config = [
-    'app_name' => 'DME Hospital',
-    'version' => '1.0.0',
-    'lang' => 'fr',
-    'debug' => true
+    'app_name' => 'DME Hospital — HSJM',
+    'version'  => '1.0.0',
+    'lang'     => 'fr',
+    'debug'    => APP_DEBUG,
+    'env'      => APP_ENV,
 ];
 ?>
