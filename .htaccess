@@ -5,8 +5,8 @@ Options -MultiViews
 # 2. Activer le moteur de réécriture
 RewriteEngine On
 
-# 3. Définir la base (Important pour localhost/dme_hospital/)
-RewriteBase /dme_hospital/
+# 3. Définir la base (DocumentRoot pointe directement sur DME_HSJM)
+RewriteBase /
 
 # 4. Support des fichiers DICOM (pour que le navigateur les reconnaisse)
 AddType application/dicom .dcm

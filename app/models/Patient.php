@@ -252,7 +252,7 @@ class Patient {
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $numero = $result['total'] + 1;
-        return 'P-' . $annee . '-' . str_pad($numero, 5, '0', STR_PAD_LEFT);
+        return 'HSJM-' . $annee . '-' . str_pad($numero, 5, '0', STR_PAD_LEFT);
     }
 
     // À ajouter dans app/models/Patient.php

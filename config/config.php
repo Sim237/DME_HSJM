@@ -2,7 +2,7 @@
 // Ne pas démarrer la session ici car elle est déjà démarrée dans index.php
 date_default_timezone_set('Africa/Douala');
 
-define('BASE_URL', 'http://localhost:8080/dme_hospital/');
+define('BASE_URL', 'http://localhost:8080/');
 define('UPLOAD_PATH', __DIR__ . '/../assets/uploads/');
 
 // ==================================================================
@@ -16,7 +16,7 @@ define('DB_USER', 'root');
 // Si vous êtes sur XAMPP (Windows) : Laissez vide ''
 // Si vous êtes sur MAMP (Mac) : Mettez 'root'
 // Si vous avez défini un mot de passe personnel : Mettez-le ici
-define('DB_PASS', 'Franck@2903');
+define('DB_PASS', 'root'); // Mot de passe MySQL local MAMP (défaut)
 
 // ==================================================================
 // CONFIGURATION GÉNÉRALE
