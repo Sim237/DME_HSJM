@@ -503,6 +503,37 @@ case (preg_match('/agenda\/delete\/(\d+)/', $request, $matches)):
     require_once 'app/controllers/AgendaController.php';
     (new AgendaController())->delete($matches[1]);
     break;
+
+case ($request == 'imagerie'):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->index(); // Votre vue index
+    break;
+
+case (preg_match('/imagerie\/viewer\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->viewer($matches[1]);
+    break;
+
+case (preg_match('/imagerie\/dicom-data\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->dicomData($matches[1]);
+    break;
+
+case ($request == 'imagerie/save-interpretation'):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->saveInterpretation();
+    break;
+
+case (preg_match('/imagerie\/fetchDicom\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->fetchDicom($matches[1]);
+    break;
+
+case ($request == 'imagerie/saveThumbnail'):
+    require_once 'app/controllers/ImagerieController.php';
+    // Créez une méthode simple qui décode le base64 du canvas et l'enregistre en .jpg
+    (new ImagerieController())->saveThumbnail();
+    break;
     /* ============================================================
        DEFAUT : 404
        ============================================================ */

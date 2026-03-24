@@ -17,80 +17,138 @@ class DashboardController extends UnifiedController {
         $this->patientModel = new Patient();
     }
 
-    public function index() {
-        $userRole = $_SESSION['user_role'] ?? '';
-        $userId = $_SESSION['user_id'] ?? 0;
-        $serviceId = $_SESSION['service_id'] ?? 0;
-        $db = (new Database())->getConnection();
+   public function index() {
+    // 1. Récupération des informations de session
+    $userRole = $_SESSION['user_role'] ?? '';
+    $userId = $_SESSION['user_id'] ?? 0;
+    $serviceId = $_SESSION['service_id'] ?? 0;
 
-        // ============================================================
-        // 1. LOGIQUE POUR L'ADMINISTRATEUR (KPI TEMPS RÉEL)
-        // ============================================================
-        if ($userRole === 'ADMIN') {
-            $stats = [];
-            $stats['total_patients'] = $db->query("SELECT COUNT(*) FROM patients")->fetchColumn() ?: 0;
-            $stats['hosp_actuelles'] = $db->query("SELECT COUNT(*) FROM admissions WHERE statut = 'EN_COURS'")->fetchColumn() ?: 0;
+    // Connexion à la base de données
+    $db = (new Database())->getConnection();
 
-            $sqlCA = "SELECT SUM(montant_ttc) FROM factures
-                      WHERE statut = 'payee'
-                      AND MONTH(date_facture) = MONTH(CURRENT_DATE())
-                      AND YEAR(date_facture) = YEAR(CURRENT_DATE())";
-            $stats['ca_du_mois'] = $db->query($sqlCA)->fetchColumn() ?: 0;
-            $stats['alertes_stock'] = $db->query("SELECT COUNT(*) FROM medicaments WHERE quantite <= seuil_alerte")->fetchColumn() ?: 0;
-
-            $system_status = [
-                'CPU' => ['value' => (function_exists('sys_getloadavg') ? round(sys_getloadavg()[0] * 10, 1) : rand(5,15)), 'unit' => '%'],
-                'MEMORY' => ['value' => round(memory_get_usage(true) / 1024 / 1024, 1), 'unit' => 'MB']
-            ];
-
-            $stmtLogs = $db->query("
-                SELECT al.*, u.nom, u.prenom
-                FROM audit_logs al
-                LEFT JOIN users u ON al.user_id = u.id
-                ORDER BY al.created_at DESC LIMIT 6
-            ");
-            $recent_logs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
-
-            require_once __DIR__ . '/../views/admin/dashboard.php';
-            return;
-        }
-
-        // ============================================================
-        // 2. ROUTAGE AUTOMATIQUE PAR SERVICE
-        // ============================================================
-        $stmtS = $db->prepare("SELECT nom_service FROM services WHERE id = ?");
-        $stmtS->execute([$serviceId]);
-        $service = $stmtS->fetch(PDO::FETCH_ASSOC);
-        $nomService = $service['nom_service'] ?? 'Général';
-        $serviceKey = strtolower(trim($nomService));
-
-        if (stripos($serviceKey, 'urgences') !== false) {
-            header('Location: ' . BASE_URL . 'urgences');
-            exit;
-        }
-
-        if ($userRole === 'SECRETAIRE' || stripos($serviceKey, 'accueil') !== false) {
-            header('Location: ' . BASE_URL . 'accueil');
-            exit;
-        }
-
-        if (stripos($serviceKey, 'paramètres') !== false) {
-            header('Location: ' . BASE_URL . 'parametres');
-            exit;
-        }
-
-        // ============================================================
-        // 3. LOGIQUE POUR LES SERVICES STANDARDS
-        // ============================================================
-        if ($userRole === 'INFIRMIER') {
-            $this->loadNurseWardData($db, $serviceId, $userId);
-        } elseif ($userRole === 'MEDECIN') {
-            $this->loadDoctorWardData($db, $serviceId, $userId);
-        } else {
-            $stats = ['nom_service' => $nomService];
-            require_once __DIR__ . '/../views/dashboard/dashboard_service.php';
-        }
+    // ============================================================
+    // 1. LOGIQUE POUR L'ADMINISTRATEUR (Vue Globale)
+    // ============================================================
+    if ($userRole === 'ADMIN') {
+        $dashboardData = $this->dataService->getDashboardData();
+        $stats = $dashboardData['patients'];
+        require_once __DIR__ . '/../views/admin/dashboard.php';
+        return;
     }
+
+    // ============================================================
+    // 2. RÉCUPÉRATION ET NORMALISATION DU SERVICE
+    // ============================================================
+    $stmtS = $db->prepare("SELECT nom_service FROM services WHERE id = ?");
+    $stmtS->execute([$serviceId]);
+    $service = $stmtS->fetch(PDO::FETCH_ASSOC);
+    $nomService = $service['nom_service'] ?? 'Général';
+
+    // Nettoyage de la chaîne pour faciliter les comparaisons (minuscules, sans espaces inutiles)
+    $serviceKey = strtolower(trim($nomService));
+
+    // ============================================================
+    // 3. ROUTAGE PAR SERVICE SPÉCIFIQUE (COCKPITS)
+    // ============================================================
+
+    // A. SERVICE DES URGENCES
+    if (stripos($serviceKey, 'urgences') !== false) {
+        header('Location: ' . BASE_URL . 'urgences');
+        exit;
+    }
+
+    // B. SERVICE D'ACCUEIL / RÉCEPTION
+    if ($userRole === 'SECRETAIRE' || stripos($serviceKey, 'accueil') !== false) {
+        header('Location: ' . BASE_URL . 'accueil');
+        exit;
+    }
+
+    // C. BUREAUX DES PARAMÈTRES (TRI)
+    if (stripos($serviceKey, 'paramètres') !== false) {
+        header('Location: ' . BASE_URL . 'parametres');
+        exit;
+    }
+
+    // D. SERVICE PHARMACIE
+    if ($userRole === 'PHARMACIEN' || stripos($serviceKey, 'pharmacie') !== false) {
+        $this->loadPharmacistDashboardData($db, $userId);
+        return;
+    }
+
+    // E. SERVICE IMAGERIE MÉDICALE
+    if (stripos($serviceKey, 'imagerie') !== false) {
+        $this->loadImagingDashboardData($db, $userId);
+        return;
+    }
+
+    // ============================================================
+    // 4. ROUTAGE CLINIQUE STANDARD (Médecine, Chirurgie, Pédia...)
+    // ============================================================
+
+    // Logique pour les INFIRMIERS de service (Gestion lits, soins, admissions)
+    if ($userRole === 'INFIRMIER') {
+        $this->loadNurseWardData($db, $serviceId, $userId);
+        return;
+    }
+
+    // Logique pour les MÉDECINS de service (Consultations, hospitalisés, résultats)
+    if ($userRole === 'MEDECIN') {
+        $this->loadDoctorWardData($db, $serviceId, $userId);
+        return;
+    }
+
+    // ============================================================
+    // 5. FALLBACK (VUE PAR DÉFAUT)
+    // ============================================================
+    // Si aucun routage spécifique n'est trouvé
+    $stats = ['nom_service' => $nomService];
+    require_once __DIR__ . '/../views/dashboard/dashboard_service.php';
+}
+
+   private function loadPharmacistDashboardData($db, $userId) {
+    // 1. INITIALISATION DES VARIABLES (Pour éviter les "Undefined variable")
+    $total_refs = 0;
+    $total_alerte = 0;
+    $processed_today = 0;
+    $pending_count = 0;
+    $pending_orders = [];
+    $low_stock = [];
+
+    try {
+        // A. Nombre de références totales
+        $total_refs = $db->query("SELECT COUNT(*) FROM medicaments")->fetchColumn() ?: 0;
+
+        // B. Nombre de produits en alerte (Correction du nom de la variable)
+        $total_alerte = $db->query("SELECT COUNT(*) FROM medicaments WHERE quantite <= seuil_alerte")->fetchColumn() ?: 0;
+
+        // C. Ordonnances traitées aujourd'hui
+        $processed_today = $db->query("SELECT COUNT(*) FROM ordonnances_pharmacie WHERE statut = 'TRAITEE' AND DATE(date_traitement) = CURDATE()")->fetchColumn() ?: 0;
+
+        // D. Ordonnances en attente
+        $pending_count = $db->query("SELECT COUNT(*) FROM ordonnances_pharmacie WHERE statut = 'SIGNEE'")->fetchColumn() ?: 0;
+
+        // E. Liste des ordonnances (Jointure réelle)
+        $stmtOrders = $db->prepare("SELECT o.*, p.nom, p.prenom, p.dossier_numero, u.nom as medecin_nom,
+                                   TIMESTAMPDIFF(MINUTE, o.date_creation, NOW()) as minutes_attente
+                                   FROM ordonnances_pharmacie o
+                                   JOIN patients p ON o.patient_id = p.id
+                                   JOIN users u ON o.medecin_id = u.id
+                                   WHERE o.statut = 'SIGNEE'
+                                   ORDER BY o.date_creation ASC");
+        $stmtOrders->execute();
+        $pending_orders = $stmtOrders->fetchAll(PDO::FETCH_ASSOC);
+
+        // F. Liste des alertes de stock (On force les noms des colonnes 'nom' et 'quantite')
+        $stmtStock = $db->query("SELECT nom, forme, dosage, quantite FROM medicaments WHERE quantite <= seuil_alerte ORDER BY quantite ASC LIMIT 5");
+        $low_stock = $stmtStock->fetchAll(PDO::FETCH_ASSOC);
+
+    } catch (Exception $e) {
+        error_log("Erreur Pharmacie : " . $e->getMessage());
+    }
+
+    // Chargement de la vue (les variables ci-dessus sont automatiquement extraites)
+    require_once __DIR__ . '/../views/pharmacie/dashboard.php';
+}
 
    private function loadNurseWardData($db, $serviceId, $userId) {
     // A. Patients déjà hospitalisés (statut 'en_cours') dans le service de l'infirmier
@@ -270,4 +328,27 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['success' => true]);
         }
     }
+
+    private function loadImagingDashboardData($db, $userId) {
+    // 1. Statistiques du jour
+    $stats = [
+        'en_attente' => $db->query("SELECT COUNT(*) FROM demandes_imagerie WHERE statut = 'EN_ATTENTE'")->fetchColumn(),
+        'a_interpreter' => $db->query("SELECT COUNT(*) FROM demandes_imagerie WHERE statut = 'termine'")->fetchColumn(),
+        'termines' => $db->query("SELECT COUNT(*) FROM demandes_imagerie WHERE statut = 'interprete' AND DATE(date_resultats) = CURDATE()")->fetchColumn()
+    ];
+
+    // 2. Liste des examens (pour votre index.php)
+    $stmt = $db->prepare("
+        SELECT i.*, p.nom, p.prenom, p.dossier_numero, u.nom as medecin_nom
+        FROM demandes_imagerie i
+        JOIN patients p ON i.patient_id = p.id
+        JOIN users u ON i.medecin_id = u.id
+        ORDER BY (i.urgence = 'URGENT') DESC, i.date_creation DESC
+    ");
+    $stmt->execute();
+    $examens = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    require_once __DIR__ . '/../views/imagerie/index.php';
+}
+
 }

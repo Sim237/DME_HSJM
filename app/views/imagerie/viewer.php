@@ -1,293 +1,190 @@
-<?php
-// Sécurisation des variables pour éviter les Warnings
-$examen['nom'] = $examen['nom'] ?? 'Patient';
-$examen['prenom'] = $examen['prenom'] ?? 'Inconnu';
-$examen['type_examen'] = $examen['type_examen'] ?? $examen['type_imagerie'] ?? 'Examen';
-$examen['partie_corps'] = $examen['partie_corps'] ?? $examen['partie_code'] ?? 'Zone non spécifiée';
-$examen['date_examen'] = $examen['date_examen'] ?? date('Y-m-d H:i:s');
-?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualiseur DICOM - <?= htmlspecialchars($examen['nom'] . ' ' . $examen['prenom']) ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
-    <!-- Bibliothèques Cornerstone -->
-    <script src="https://cdn.jsdelivr.net/npm/cornerstone-core@2.6.1/dist/cornerstone.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cornerstone-math@0.1.9/dist/cornerstoneMath.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cornerstone-tools@6.0.10/dist/cornerstoneTools.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dicom-parser@1.8.21/dist/dicomParser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cornerstone-wado-image-loader@4.13.2/dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+<!-- LIBRAIRIES CORNERSTONE (MÉDICAL STANDARDS) -->
+<script src="https://cdn.jsdelivr.net/npm/cornerstone-core@2.6.1/dist/cornerstone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dicom-parser@1.8.21/dist/dicomParser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cornerstone-wado-image-loader@4.13.2/dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cornerstone-math@0.1.9/dist/cornerstoneMath.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cornerstone-tools@6.0.10/dist/cornerstoneTools.min.js"></script>
 
-    <style>
-        body { background: #1a1a1a; color: white; margin: 0; padding: 0; overflow: hidden; }
-        .viewer-container { height: 100vh; display: flex; }
-        .sidebar-tools { width: 250px; background: #2d2d2d; padding: 1rem; overflow-y: auto; border-right: 1px solid #444; }
-        .viewer-main { flex: 1; display: flex; flex-direction: column; }
-        .viewer-header { background: #333; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
-        .viewer-canvas { flex: 1; position: relative; background: #000; cursor: crosshair; }
-        .dicom-viewport { width: 100%; height: 100%; }
-        .tool-group { margin-bottom: 1.5rem; }
-        .tool-group h6 { color: #ffc107; margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; }
-        .tool-btn { width: 100%; margin-bottom: 0.25rem; text-align: left; }
-        .tool-btn.active { background: #0d6efd; color: white; border-color: #0d6efd; }
-        .patient-info { background: #333; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid #0d6efd; }
-    </style>
-</head>
-<body>
-    <div class="viewer-container">
-        <!-- Sidebar Outils -->
-        <div class="sidebar-tools">
-            <div class="patient-info">
-                <h6 class="text-white"><i class="bi bi-person"></i> Patient</h6>
-                <div class="fw-bold"><?= htmlspecialchars($examen['nom'] . ' ' . $examen['prenom']) ?></div>
-                <div class="small text-muted"><?= htmlspecialchars($examen['type_examen']) ?></div>
-                <div class="small text-muted"><?= date('d/m/Y', strtotime($examen['date_examen'])) ?></div>
-            </div>
+<style>
+    body { background: #000; color: #fff; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+    .sidebar { display: none !important; }
+    main { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
 
-            <div class="tool-group">
-                <h6><i class="bi bi-tools"></i> Navigation & Zoom</h6>
-                <button class="btn btn-outline-light btn-sm tool-btn active" id="toolPan">
-                    <i class="bi bi-arrows-move"></i> Déplacer
-                </button>
-                <button class="btn btn-outline-light btn-sm tool-btn" id="toolZoom">
-                    <i class="bi bi-zoom-in"></i> Zoom
-                </button>
-                <button class="btn btn-outline-light btn-sm tool-btn" id="toolWwwc">
-                    <i class="bi bi-brightness-high"></i> Contraste (L/H)
-                </button>
-            </div>
+    .viewer-layout { display: flex; height: 100vh; }
 
-            <div class="tool-group">
-                <h6><i class="bi bi-rulers"></i> Mesures</h6>
-                <button class="btn btn-outline-light btn-sm tool-btn" id="toolLength">
-                    <i class="bi bi-rulers"></i> Règle (Mesure)
-                </button>
-                <button class="btn btn-outline-light btn-sm tool-btn" id="toolAngle">
-                    <i class="bi bi-triangle"></i> Angle
-                </button>
-                <button class="btn btn-outline-light btn-sm tool-btn" id="toolReset">
-                    <i class="bi bi-arrow-clockwise"></i> Réinitialiser
-                </button>
-            </div>
+    /* Panneau d'outils latéral */
+    .tools-panel { width: 260px; background: #1a1a1a; border-right: 1px solid #333; padding: 20px; display: flex; flex-direction: column; }
+    .tool-btn {
+        background: #2a2a2a; border: 1px solid #444; color: #ccc;
+        padding: 12px; border-radius: 10px; margin-bottom: 8px;
+        width: 100%; text-align: left; transition: 0.2s;
+    }
+    .tool-btn:hover, .tool-btn.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+    .tool-btn i { margin-right: 10px; }
 
-            <div class="tool-group">
-                <h6><i class="bi bi-sliders"></i> Fenêtrage manuel</h6>
-                <div class="mb-2">
-                    <label class="form-label small">Niveau (Center)</label>
-                    <input type="range" class="form-range" id="windowCenter" min="-1000" max="1000" value="40">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label small">Largeur (Width)</label>
-                    <input type="range" class="form-range" id="windowWidth" min="1" max="2000" value="400">
-                </div>
-            </div>
+    /* Zone d'image */
+    .viewport-area { flex-grow: 1; position: relative; background: #000; }
+    #dicomViewport { width: 100%; height: 100%; }
+
+    /* Overlays */
+    .overlay { position: absolute; padding: 15px; pointer-events: none; color: #00ff41; font-family: monospace; font-size: 13px; }
+    .top-left { top: 0; left: 0; }
+    .bottom-right { bottom: 0; right: 0; text-align: right; }
+
+    /* Panel Rapport */
+    .report-drawer {
+        position: fixed; bottom: 0; left: 260px; right: 0;
+        background: rgba(26,26,26,0.95); border-top: 2px solid #0d6efd;
+        padding: 20px; transform: translateY(100%); transition: 0.4s; z-index: 1000;
+    }
+    .report-drawer.open { transform: translateY(0); }
+</style>
+
+<div class="viewer-layout">
+    <div class="tools-panel">
+        <div class="mb-4">
+            <img src="<?= BASE_URL ?>public/images/logo_ordre_malte.png" style="height: 30px; filter: grayscale(1) brightness(2);">
+            <h6 class="mt-3 fw-bold text-primary text-uppercase small">Viewer Diagnostic</h6>
         </div>
 
-        <!-- Zone principale -->
-        <div class="viewer-main">
-            <div class="viewer-header">
-                <h6 class="mb-0 text-white">
-                    <?= htmlspecialchars($examen['type_examen']) ?> - <?= htmlspecialchars($examen['partie_corps']) ?>
-                </h6>
-                <div>
-                    <button class="btn btn-outline-light btn-sm me-2" onclick="toggleInterpretation()">
-                        <i class="bi bi-file-earmark-text"></i> Interpréter
-                    </button>
-                    <a href="<?= BASE_URL ?>imagerie" class="btn btn-danger btn-sm">
-                        <i class="bi bi-x-lg"></i> Fermer
-                    </a>
-                </div>
-            </div>
+        <div class="patient-info mb-4 p-3 rounded bg-dark border-start border-3 border-primary">
+            <div class="small text-muted text-uppercase fw-bold">Patient</div>
+            <div class="fw-bold"><?= strtoupper($examen['nom']) ?> <?= $examen['prenom'] ?></div>
+            <div class="small opacity-50"><?= $examen['type_imagerie'] ?> - <?= $examen['partie_code'] ?></div>
+        </div>
 
-            <div class="viewer-canvas">
-                <div id="dicomViewport" class="dicom-viewport"></div>
+        <div class="flex-grow-1">
+            <button class="tool-btn active" id="btn-pan" onclick="activateTool('Pan')"><i class="bi bi-arrows-move"></i> Déplacer</button>
+            <button class="tool-btn" id="btn-zoom" onclick="activateTool('Zoom')"><i class="bi bi-zoom-in"></i> Zoom</button>
+            <button class="tool-btn" id="btn-wwwc" onclick="activateTool('Wwwc')"><i class="bi bi-brightness-high"></i> Contraste / Lulminosité</button>
+            <button class="tool-btn" id="btn-length" onclick="activateTool('Length')"><i class="bi bi-ruler"></i> Mesure Linéaire</button>
+            <button class="tool-btn" onclick="cornerstone.reset(document.getElementById('dicomViewport'))"><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</button>
+        </div>
 
-                <!-- Overlay Informations -->
-                <div style="position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px;">
-                    <div class="small">
-                        <div id="imageInfo">Initialisation du visualiseur...</div>
-                        <div id="activeToolInfo">Outil : Déplacer</div>
-                    </div>
-                </div>
-            </div>
+        <div class="mt-auto">
+            <button class="btn btn-primary w-100 mb-2 rounded-pill fw-bold" onclick="document.getElementById('reportDrawer').classList.toggle('open')">
+                <i class="bi bi-pencil-square"></i> RÉDIGER RAPPORT
+            </button>
+            <a href="<?= BASE_URL ?>imagerie" class="btn btn-outline-danger w-100 rounded-pill btn-sm">FERMER</a>
         </div>
     </div>
 
-    <!-- Panel Interprétation -->
-    <div id="interpretationPanel" style="display: none; position: fixed; bottom: 0; left: 250px; right: 0; background: #333; padding: 1.5rem; border-top: 2px solid #0d6efd; z-index: 100;">
-        <h6 class="text-primary mb-3">Compte-rendu Radiologique</h6>
-        <div class="row">
-            <div class="col-md-6">
-                <label class="small">Observations</label>
-                <textarea class="form-control bg-dark text-white border-secondary" id="interpretation" rows="4"></textarea>
-            </div>
-            <div class="col-md-6">
-                <label class="small">Conclusion</label>
-                <textarea class="form-control bg-dark text-white border-secondary" id="conclusion" rows="4"></textarea>
-            </div>
+    <div class="viewport-area">
+        <div id="dicomViewport"></div>
+
+        <!-- Overlays de données -->
+        <div class="overlay top-left">
+            DME HOSPITAL - Unité Imagerie<br>
+            Examen: <?= $examen['type_imagerie'] ?><br>
+            Zone: <?= $examen['partie_code'] ?>
         </div>
-        <div class="mt-3 text-end">
-            <button class="btn btn-secondary btn-sm" onclick="toggleInterpretation()">Annuler</button>
-            <button class="btn btn-primary btn-sm" onclick="saveInterpretation()">Enregistrer l'interprétation</button>
+        <div class="overlay bottom-right">
+            L/H: <span id="val-lh">--</span> / <span id="val-lc">--</span><br>
+            Zoom: <span id="val-zoom">1.0</span>x<br>
+            Date: <?= date('d/m/Y H:i', strtotime($examen['date_creation'])) ?>
         </div>
     </div>
+</div>
 
-    <script>
-    // FIX : Définition globale pour le JavaScript
-    const BASE_URL = '<?= BASE_URL ?>';
+<!-- TIROIR DE RAPPORT -->
+<div class="report-drawer" id="reportDrawer">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 text-primary fw-bold">COMPTE-RENDU RADIOLOGIQUE</h5>
+        <button class="btn-close btn-close-white" onclick="document.getElementById('reportDrawer').classList.remove('open')"></button>
+    </div>
+    <div class="row">
+        <div class="col-md-7">
+            <textarea id="interp-text" class="form-control bg-dark text-white border-secondary" rows="5" placeholder="Interprétation détaillée..."></textarea>
+        </div>
+        <div class="col-md-5">
+            <input type="text" id="concl-text" class="form-control bg-dark text-white border-secondary mb-3" placeholder="Conclusion diagnostique finale">
+            <button class="btn btn-primary btn-lg w-100 shadow" onclick="saveAll()">VALIDER ET TRANSMETTRE AU DOSSIER</button>
+        </div>
+    </div>
+</div>
+
+<script>
     const EXAMEN_ID = '<?= $examen['id'] ?>';
+    const FETCH_URL = '<?= BASE_URL ?>imagerie/fetchDicom/' + EXAMEN_ID;
 
-    class DicomViewer {
-        constructor() {
-            this.element = document.getElementById('dicomViewport');
-            this.init();
-        }
+    // Initialisation Cornerstone
+    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
 
-        async init() {
-            // 1. Initialiser Cornerstone
-            cornerstone.enable(this.element);
+    const element = document.getElementById('dicomViewport');
+    cornerstone.enable(element);
 
-            // 2. Configurer les outils
-            cornerstoneTools.external.cornerstone = cornerstone;
-            cornerstoneTools.external.cornerstoneMath = cornerstoneMath;
+    // Chargement de l'image
+    async function initViewer() {
+        try {
+            const imageId = "wadouri:" + FETCH_URL;
+            const image = await cornerstone.loadAndCacheImage(imageId);
+            cornerstone.displayImage(element, image);
+
+            // Initialisation des outils
             cornerstoneTools.init();
+            activateTool('Pan');
 
-            // 3. Charger le loader WADO (pour fichiers web)
-            cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-            cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-
-            // 4. Charger l'image
-            await this.loadExamen();
-
-            // 5. Configurer les outils
-            this.setupTools();
-            this.setupEventListeners();
-        }
-
-        async loadExamen() {
-            try {
-                // On tente de récupérer le chemin réel du fichier DICOM via l'API
-                const response = await fetch(`${BASE_URL}imagerie/dicom-data/${EXAMEN_ID}`);
-                const data = await response.json();
-
-                // Si on a un fichier réel dans la base
-                if (data.imageIds && data.imageIds.length > 0) {
-                    const imageId = data.imageIds[0];
-                    const image = await cornerstone.loadImage(imageId);
-                    cornerstone.displayImage(this.element, image);
-                    this.updateImageInfo(image);
-                } else {
-                    this.loadDemoImage();
-                }
-            } catch (e) {
-                console.warn("Fichier DICOM introuvable, chargement mode démo.");
-                this.loadDemoImage();
-            }
-        }
-
-        loadDemoImage() {
-            // Création d'une mire de test si le fichier n'est pas trouvé
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = "black"; ctx.fillRect(0,0,512,512);
-            ctx.strokeStyle = "white"; ctx.strokeRect(50,50,412,412);
-            ctx.fillStyle = "white"; ctx.font = "20px Arial";
-            ctx.fillText("MODE VISUALISATION DEMO", 120, 250);
-            ctx.fillText("Fichier DICOM non chargé physiquement", 80, 280);
-
-            const image = {
-                imageId: 'demo', minPixelValue: 0, maxPixelValue: 255, slope: 1, intercept: 0,
-                windowCenter: 128, windowWidth: 256, rows: 512, columns: 512, height: 512, width: 512,
-                color: false, columnPixelSpacing: 1, rowPixelSpacing: 1,
-                getPixelData: () => new Uint8Array(ctx.getImageData(0,0,512,512).data),
-                sizeInBytes: 512*512*4
-            };
-            cornerstone.displayImage(this.element, image);
-            document.getElementById('imageInfo').textContent = "Image de substitution (Preview)";
-        }
-
-        setupTools() {
-            // Ajouter les outils Cornerstone
-            cornerstoneTools.addTool(cornerstoneTools.PanTool);
-            cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
-            cornerstoneTools.addTool(cornerstoneTools.WwwcTool);
-            cornerstoneTools.addTool(cornerstoneTools.LengthTool);
-            cornerstoneTools.addTool(cornerstoneTools.AngleTool);
-
-            // Activer le Pan (Déplacement) par défaut
-            cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 1 });
-        }
-
-        setActiveTool(toolName, label) {
-            // Désactiver tous
-            const tools = ['Pan', 'Zoom', 'Wwwc', 'Length', 'Angle'];
-            tools.forEach(t => cornerstoneTools.setToolPassive(t));
-
-            // Activer le nouveau
-            cornerstoneTools.setToolActive(toolName, { mouseButtonMask: 1 });
-
-            // Update UI
-            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tool' + toolName).classList.add('active');
-            document.getElementById('activeToolInfo').textContent = 'Outil : ' + label;
-        }
-
-        setupEventListeners() {
-            document.getElementById('toolPan').onclick = () => this.setActiveTool('Pan', 'Déplacer');
-            document.getElementById('toolZoom').onclick = () => this.setActiveTool('Zoom', 'Zoom');
-            document.getElementById('toolWwwc').onclick = () => this.setActiveTool('Wwwc', 'Contraste');
-            document.getElementById('toolLength').onclick = () => this.setActiveTool('Length', 'Mesure');
-            document.getElementById('toolAngle').onclick = () => this.setActiveTool('Angle', 'Angle');
-            document.getElementById('toolReset').onclick = () => cornerstone.reset(this.element);
-
-            // Fenêtrage
-            document.getElementById('windowCenter').oninput = (e) => this.updateVOI();
-            document.getElementById('windowWidth').oninput = (e) => this.updateVOI();
-        }
-
-        updateVOI() {
-            const viewport = cornerstone.getViewport(this.element);
-            viewport.voi.windowCenter = parseInt(document.getElementById('windowCenter').value);
-            viewport.voi.windowWidth = parseInt(document.getElementById('windowWidth').value);
-            cornerstone.setViewport(this.element, viewport);
-        }
-
-        updateImageInfo(image) {
-            document.getElementById('imageInfo').textContent = `${image.width} x ${image.height} | Res : ${image.columnPixelSpacing.toFixed(2)} mm`;
-        }
-    }
-
-    // Fonctions globales
-    function toggleInterpretation() {
-        const p = document.getElementById('interpretationPanel');
-        p.style.display = (p.style.display === 'none') ? 'block' : 'none';
-    }
-
-    function saveInterpretation() {
-        const formData = new FormData();
-        formData.append('imagerie_id', EXAMEN_ID);
-        formData.append('interpretation', document.getElementById('interpretation').value);
-        formData.append('conclusion', document.getElementById('conclusion').value);
-
-        fetch(`${BASE_URL}imagerie/save-interpretation`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    alert("Interprétation enregistrée avec succès !");
-                    toggleInterpretation();
-                }
+            // Mise à jour des overlays lors des changements
+            element.addEventListener('cornerstoneimagerendered', function(e) {
+                const viewport = cornerstone.getViewport(element);
+                document.getElementById('val-lh').innerText = Math.round(viewport.voi.windowWidth);
+                document.getElementById('val-lc').innerText = Math.round(viewport.voi.windowCenter);
+                document.getElementById('val-zoom').innerText = viewport.scale.toFixed(2);
             });
+
+            // GÉNÉRER LA MINIATURE AUTOMATIQUEMENT SI ELLE N'EXISTE PAS
+            <?php if(!$examen['fichier_preview']): ?>
+                setTimeout(saveAutoThumbnail, 2000);
+            <?php endif; ?>
+
+        } catch(err) {
+            console.error(err);
+            alert("Erreur lors de l'accès au fichier DICOM.");
+        }
     }
 
-    let viewer;
-    document.addEventListener('DOMContentLoaded', () => {
-        viewer = new DicomViewer();
-    });
-    </script>
-</body>
-</html>
+    function activateTool(name) {
+        const tools = ['Pan', 'Zoom', 'Wwwc', 'Length'];
+        tools.forEach(t => {
+            cornerstoneTools.addTool(cornerstoneTools[t + "Tool"]);
+            cornerstoneTools.setToolPassive(t);
+        });
+        cornerstoneTools.setToolActive(name, { mouseButtonMask: 1 });
+
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + name.toLowerCase()).classList.add('active');
+    }
+
+    function saveAutoThumbnail() {
+        const canvas = element.querySelector('canvas');
+        if(!canvas) return;
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        const fd = new FormData();
+        fd.append('imagerie_id', EXAMEN_ID);
+        fd.append('image_data', dataURL);
+        fetch('<?= BASE_URL ?>imagerie/saveThumbnail', { method: 'POST', body: fd });
+    }
+
+    function saveAll() {
+        const fd = new FormData();
+        fd.append('imagerie_id', EXAMEN_ID);
+        fd.append('interpretation', document.getElementById('interp-text').value);
+        fd.append('conclusion', document.getElementById('concl-text').value);
+
+        fetch('<?= BASE_URL ?>imagerie/save-interpretation', { method: 'POST', body: fd })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert("Rapport transmis au dossier patient.");
+                window.location.href = '<?= BASE_URL ?>imagerie';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initViewer);
+</script>
+
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -3,7 +3,7 @@ class Database {
     private $host = "localhost";
     private $db_name = "dme_hospital";
     private $username = "root";
-    private $password = "root"; // Mot de passe MySQL local MAMP (défaut)
+    private $password = "root";
     public $conn;
 
     public function getConnection() {
