@@ -315,12 +315,67 @@ BASE_URL=http://localhost:8080/    # ou /DME_HSJM/ selon votre config MAMP
 
 ---
 
+---
+
+### [2026-03-24] — Dashboard Laboratoire en mode cockpit + redirection après login
+
+| Champ | Détail |
+|-------|--------|
+| **Date** | 2026-03-24 |
+| **Auteur** | Claude (assistant IA) |
+| **Type** | Nouvelle fonctionnalité / Correction |
+| **Impact** | UX — le laborantin voit son cockpit dédié dès la connexion |
+
+**Problèmes résolus :**
+1. Un utilisateur `LABORANTIN` était redirigé vers `/dashboard` (vue générique avec sidebar) au lieu du cockpit `/laboratoire`
+2. La vue `laboratoire/dashboard.php` affichait la sidebar au lieu de la masquer comme la pharmacie
+
+**Fichiers modifiés :**
+- `app/controllers/AuthController.php` — méthode `verifyService()` lignes 114-120
+- `app/views/laboratoire/dashboard.php` — réécriture complète en mode cockpit
+
+**Diff AuthController — ajout des cas laboratoire et pharmacie :**
+```php
+// AVANT — tout tombait dans le else → /dashboard
+else {
+    header('Location: ' . BASE_URL . 'dashboard');
+}
+
+// APRÈS — redirections dédiées
+elseif (stripos($serviceKey, 'laboratoire') !== false || $user['role'] === 'LABORANTIN') {
+    header('Location: ' . BASE_URL . 'laboratoire');
+}
+elseif (stripos($serviceKey, 'pharmacie') !== false || $user['role'] === 'PHARMACIEN') {
+    header('Location: ' . BASE_URL . 'pharmacie');
+}
+else {
+    header('Location: ' . BASE_URL . 'dashboard');
+}
+```
+
+**Cockpit laboratoire — fonctionnalités :**
+- Sidebar masquée : `.sidebar { display: none !important; }`
+- Header institutionnel bleu foncé gradient + titre "LABORATOIRE CENTRAL • HSJM"
+- Horloge néon cyan (cohérente avec la charte labo)
+- 4 KPI cards : Demandes du jour / Urgents / Délai moyen / Taux qualité
+- Barre de filtres (statut, priorité, recherche patient)
+- Table améliorée avec badges colorés par statut, délai critique clignotant
+- Boutons d'action : Traiter / Saisir résultats / Valider / Imprimer
+- Auto-refresh toutes les 30 secondes
+
+**Double sécurité de la redirection :**
+- Par nom de service (`stripos` sur `nom_service`) → fonctionne même si le nom change
+- Par rôle utilisateur (`$user['role']`) → filet de sécurité si le service n'est pas dans la table
+
+---
+
 ## Améliorations identifiées / À faire
 
 | # | Description | Priorité | Statut |
 |---|-------------|----------|--------|
 | 1 | Corriger le générateur de numéro de dossier (COUNT → MAX) pour éviter les doublons | Haute | En attente |
 | 2 | Migrer les anciens numéros `P-XXXX` vers `HSJM-XXXX` si nécessaire | Moyenne | En attente |
+| 3 | Vérifier et corriger les redirections des autres rôles (INFIRMIER, MEDECIN, etc.) | Moyenne | En attente |
 
 ---
 

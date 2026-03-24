@@ -114,8 +114,16 @@ public function verifyService() {
         elseif (stripos($serviceKey, 'urgences') !== false) {
             header('Location: ' . BASE_URL . 'urgences');
         }
+        elseif (stripos($serviceKey, 'laboratoire') !== false || $user['role'] === 'LABORANTIN') {
+            // Dashboard dédié Laboratoire (cockpit sans sidebar)
+            header('Location: ' . BASE_URL . 'laboratoire');
+        }
+        elseif (stripos($serviceKey, 'pharmacie') !== false || $user['role'] === 'PHARMACIEN') {
+            // Dashboard dédié Pharmacie (cockpit sans sidebar)
+            header('Location: ' . BASE_URL . 'pharmacie');
+        }
         else {
-            // Dashboard standard (Médecine, Chirurgie, etc.)
+            // Dashboard standard (Médecine, Chirurgie, Maternité, etc.)
             header('Location: ' . BASE_URL . 'dashboard');
         }
 
