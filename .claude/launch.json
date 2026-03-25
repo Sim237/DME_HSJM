@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "PHP Built-in Server",
+      "runtimeExecutable": "/Applications/MAMP/bin/php/php8.3.30/bin/php",
+      "runtimeArgs": ["-S", "localhost:8080", "-t", "/Users/test/Movies/DME_HSJM"],
+      "port": 8080
+    },
+    {
+      "name": "MAMP Apache",
+      "runtimeExecutable": "/Applications/MAMP/bin/startApache.sh",
+      "runtimeArgs": [],
+      "port": 8080
+    },
+    {
+      "name": "MAMP MySQL",
+      "runtimeExecutable": "/Applications/MAMP/bin/startMysql.sh",
+      "runtimeArgs": [],
+      "port": 3306
+    }
+  ]
+}
