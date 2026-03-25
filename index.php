@@ -504,6 +504,17 @@ case (preg_match('/agenda\/delete\/(\d+)/', $request, $matches)):
     (new AgendaController())->delete($matches[1]);
     break;
 
+// Dans index.php, cherche la section imagerie
+case (preg_match('/imagerie\/delete\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->delete($matches[1]);
+    break;
+
+case ($request == 'imagerie'):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->index();
+    break;
+
 case ($request == 'imagerie'):
     require_once 'app/controllers/ImagerieController.php';
     (new ImagerieController())->index(); // Votre vue index
@@ -539,6 +550,12 @@ case ($request == 'imagerie/saveThumbnail'):
     // Créez une méthode simple qui décode le base64 du canvas et l'enregistre en .jpg
     (new ImagerieController())->saveThumbnail();
     break;
+
+case ($request == 'bilan/save'):
+    require_once 'app/controllers/BilanController.php';
+    (new BilanController())->save();
+    break;
+
     /* ============================================================
        DEFAUT : 404
        ============================================================ */

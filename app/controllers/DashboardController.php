@@ -300,6 +300,24 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
         $stmtT->execute([$userId]);
         $mes_taches = $stmtT->fetchAll(PDO::FETCH_ASSOC);
 
+       // 2. RÉCUPÉRATION DU SUIVI DES BILANS (Labo + Radio)
+        // Cette requête récupère les demandes qui n'ont pas encore été validées/lues
+        $sqlSuivi = "
+    (SELECT 'Labo' as type, el.nom as label, dl.statut, dl.date_creation, dl.id as record_id
+     FROM demandes_laboratoire dl
+     JOIN examens_laboratoire el ON dl.examen_id = el.id
+     WHERE dl.medecin_id = ? AND dl.statut != 'VALIDES')
+    UNION
+    (SELECT 'Radio' as type, di.partie_code as label, di.statut, di.date_creation, di.id as record_id
+     FROM demandes_imagerie di
+     WHERE di.medecin_id = ? AND di.statut != 'interprete')
+    ORDER BY date_creation DESC LIMIT 10";
+
+$stmtW = $db->prepare($sqlSuivi);
+$stmtW->execute([$userId, $userId]);
+$suivi_bilans = $stmtW->fetchAll(PDO::FETCH_ASSOC);
+
+
     } catch (PDOException $e) {
         // Log de l'erreur en cas de problème SQL
         error_log("Erreur Dashboard Medecin : " . $e->getMessage());

@@ -144,10 +144,21 @@
             $status = $ex['statut'];
             $prioColor = (isset($ex['urgence']) && $ex['urgence'] == 'URGENT') ? 'danger' : 'warning';
         ?>
+
+        <button onclick="confirmDelete(<?= $ex['id'] ?>)"
+            class="btn btn-link text-danger position-absolute"
+            style="top: 10px; left: 10px; z-index: 20; padding: 0;">
+        <i class="bi bi-trash3-fill"></i>
+    </button>
             <div class="exam-card animate__animated animate__fadeIn"
                  data-name="<?= strtolower($ex['nom'] . ' ' . $ex['prenom'] . ' ' . $ex['dossier_numero']) ?>"
                  data-type="<?= strtolower($ex['type_imagerie'] ?? '') ?>">
 
+                  <button onclick="confirmDelete(<?= $ex['id'] ?>)"
+            class="btn btn-link text-danger position-absolute"
+            style="top: 10px; left: 10px; z-index: 20; padding: 0;">
+        <i class="bi bi-trash3-fill"></i>
+    </button>
                 <?php if(isset($ex['urgence']) && $ex['urgence'] == 'URGENT'): ?>
                     <div class="prio-flash badge bg-danger animate__animated animate__pulse animate__infinite shadow">URGENT</div>
                 <?php endif; ?>
@@ -182,6 +193,7 @@
                     </div>
                 </div>
             </div>
+
         <?php endforeach; endif; ?>
     </div>
 </main>
@@ -253,6 +265,24 @@
             btn.disabled = false;
         });
     });
+
+    function confirmDelete(id) {
+    if (confirm("⚠️ Attention : Voulez-vous vraiment supprimer cet examen et ses images définitivement ?")) {
+        fetch('<?= BASE_URL ?>imagerie/delete/' + id, {
+            method: 'DELETE', // Ou POST selon votre préférence
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // On rafraîchit la page pour mettre à jour les compteurs et la grille
+                location.reload();
+            } else {
+                alert("Erreur : " + data.message);
+            }
+        })
+        .catch(err => alert("Erreur technique lors de la suppression."));
+    }
+}
 
     document.addEventListener('DOMContentLoaded', startClock);
 </script>

@@ -18,9 +18,12 @@ $history = $history ?? []; // Historique des soins infirmiers
 // Calcul de l'âge
 $age = 'N/A';
 if (!empty($patient['date_naissance'])) {
-    $age = date_diff(date_create($patient['date_naissance']), date_create('now'))->y . ' ans';
+    $age = date_diff(date_create($patient['date_naissance']), date_create('today'))->y . ' ans';
 }
 ?>
+
+<!-- IMPORT DES ICONES BOOTSTRAP -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <!-- STYLE MODERNE DÉDIÉ AU DOSSIER -->
 <style>
@@ -71,7 +74,6 @@ if (!empty($patient['date_naissance'])) {
             <p class="text-muted mb-0">Patient : <?= htmlspecialchars($patient['nom'] . ' ' . $patient['prenom']) ?></p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <!-- Bouton Retour corrigé vers Dashboard -->
             <a href="<?= BASE_URL ?>dashboard" class="btn btn-outline-secondary btn-sm shadow-sm"><i class="bi bi-arrow-left"></i> Retour</a>
 
             <form action="<?= BASE_URL ?>consultation/commencer" method="POST" style="display: inline;">
@@ -83,7 +85,6 @@ if (!empty($patient['date_naissance'])) {
                 <button type="button" class="btn btn-dark btn-sm shadow-sm" onclick="transmettreAnesthesie(<?= $patient['id'] ?>)">
                     <i class="bi bi-scissors me-1"></i> A Opérer
                 </button>
-
                 <?php if (($patient['statut'] ?? '') !== 'HOSPITALISE'): ?>
                     <button class="btn btn-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalAdmission">
                         <i class="bi bi-box-arrow-in-right"></i> Admettre sur un Lit
@@ -178,7 +179,7 @@ if (!empty($patient['date_naissance'])) {
                                     </div>
                                     <div class="text-end">
                                         <span class="badge bg-light text-dark border mb-2"><?= date('d/m/Y', strtotime($c['date_consultation'])) ?></span><br>
-                                        <a href="<?= BASE_URL ?>consultation/recapitulatif/<?= $c['id'] ?>" class="btn btn-sm btn-outline-primary px-3 rounded-pill">Voir</a>
+                                        <a href="<?= BASE_URL ?>consultation/recapitulatif/<?= $c['id'] ?>" class="btn btn-sm btn-outline-primary px-3 rounded-pill">Détails</a>
                                     </div>
                                 </div>
                             </div>
@@ -200,7 +201,7 @@ if (!empty($patient['date_naissance'])) {
                     </div>
                 </div>
 
-                <!-- CONTENU BILANS (Dernière version demandée) -->
+                <!-- CONTENU BILANS -->
                 <div class="tab-pane fade" id="tab-bilans">
                     <?php if (!empty($bilans)): ?>
                         <div class="table-responsive">
@@ -240,7 +241,7 @@ if (!empty($patient['date_naissance'])) {
                 </div>
             </div>
 
-            <!-- 3. HISTORIQUE DES SOINS EFFECTUÉS (Intégré et Cadré) -->
+            <!-- 3. HISTORIQUE DES SOINS EFFECTUÉS (PARFAITEMENT CADRÉ ICI) -->
             <div class="mt-4 animate__animated animate__fadeIn">
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
@@ -293,29 +294,52 @@ if (!empty($patient['date_naissance'])) {
 
 <!-- ================= MODALES D'ACTION ================= -->
 
-<!-- MODALE DEMANDER BILAN -->
+<!-- MODALE DEMANDER BILAN (DYNAMIQUE LABO/RADIO) -->
 <div class="modal fade" id="modalBilan" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="bi bi-flask me-2"></i> Demander un Bilan</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4">
+                <h5 class="modal-title fw-bold text-primary"><i class="bi bi-plus-circle-dotted me-2"></i>Nouvelle Demande d'Examen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="formBilanLabo">
-                    <input type="hidden" name="patient_id" value="<?= $patient['id'] ?>">
-                    <input type="hidden" name="type_bilan" value="laboratoire">
-                    <div class="mb-3">
-                        <label class="small fw-bold">Examen :</label>
-                        <select class="form-select" name="examen_id" required>
-                            <option value="1">NFS (Hématologie)</option>
-                            <option value="2">Glycémie à jeun</option>
-                            <option value="3">Bilan Rénal</option>
-                            <option value="4">Bilan Hépatique</option>
-                        </select>
+            <div class="modal-body p-4 pt-0">
+                <ul class="nav nav-pills mb-4 bg-light p-1 rounded-3" id="pills-tab-bilan" role="tablist">
+                    <li class="nav-item flex-fill"><button class="nav-link active w-100 rounded-3 fw-bold" data-bs-toggle="pill" data-bs-target="#tab-labo" type="button">LABORATOIRE</button></li>
+                    <li class="nav-item flex-fill"><button class="nav-link w-100 rounded-3 fw-bold" data-bs-toggle="pill" data-bs-target="#tab-radio" type="button">RADIOLOGIE</button></li>
+                </ul>
+                <div class="tab-content border-0 p-0 shadow-none">
+                    <div class="tab-pane fade show active" id="tab-labo">
+                        <form id="formBilanLabo">
+                            <input type="hidden" name="patient_id" value="<?= $patient['id'] ?>">
+                            <input type="hidden" name="type_bilan" value="laboratoire">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="small fw-bold">CHOIX DE L'EXAMEN</label>
+                                    <select class="form-select border-2" name="examen_id" required>
+                                        <option value="1">NFS (Hématologie complète)</option>
+                                        <option value="9">Glycémie (veineuse)</option>
+                                        <option value="2">Bilan Infectieux (CRP/VS)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4"><label class="small fw-bold">URGENCE</label><select class="form-select border-2" name="urgence"><option value="NORMAL">Normal</option><option value="URGENT">Urgent 🚨</option></select></div>
+                                <div class="col-12"><label class="small fw-bold">OBSERVATIONS</label><textarea class="form-control border-2" name="observations" rows="2"></textarea></div>
+                                <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold mt-3">ENVOYER AU LABORATOIRE</button>
+                            </div>
+                        </form>
                     </div>
-                    <button type="submit" class="btn btn-info w-100 text-white shadow-sm">Envoyer au Laboratoire</button>
-                </form>
+                    <div class="tab-pane fade" id="tab-radio">
+                        <form id="formBilanRadio">
+                            <input type="hidden" name="patient_id" value="<?= $patient['id'] ?>">
+                            <input type="hidden" name="type_bilan" value="imagerie">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="small fw-bold">MODALITÉ</label><select class="form-select border-2" name="type_imagerie" required><option value="radiographie">Radiographie</option><option value="echographie">Échographie</option><option value="scanner">Scanner</option></select></div>
+                                <div class="col-md-6"><label class="small fw-bold">ZONE À EXAMINER</label><input type="text" name="partie_code" class="form-control border-2" placeholder="Ex: Thorax..." required></div>
+                                <div class="col-12"><label class="small fw-bold">RENSEIGNEMENTS</label><textarea class="form-control border-2" name="observations" rows="2"></textarea></div>
+                                <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold mt-3">TRANSMETTRE À L'IMAGERIE</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -336,7 +360,7 @@ if (!empty($patient['date_naissance'])) {
                         <div class="col-6">
                             <label class="small fw-bold">Groupe</label>
                             <select name="groupe" id="trans_groupe" class="form-select" required>
-                                <?php foreach(['A','B','AB','O'] as $g) echo "<option value='$g'>$g</option>"; ?>
+                                <?php foreach(['A','B','AB','O'] as $g) echo "<option value='$g' ".($patient['groupe_sanguin']==$g?'selected':'').">$g</option>"; ?>
                             </select>
                         </div>
                         <div class="col-6">
@@ -348,18 +372,32 @@ if (!empty($patient['date_naissance'])) {
                     </div>
                     <div id="stockStatusBox" class="mt-3 alert d-none"></div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-danger w-100" id="btnSubmitTrans">Lancer la demande</button>
-                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-danger w-100" id="btnSubmitTrans">Lancer la demande</button></div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- SCRIPTS -->
+<!-- MODALE LISTE FORMULAIRES -->
+<div class="modal fade" id="modalListeFormulaires" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white"><h5 class="modal-title"><i class="bi bi-file-earmark-text"></i> Formulaires</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-4">
+                <div class="list-group list-group-flush">
+                    <a href="<?= BASE_URL ?>formulaire/creer/bulletin-examens/<?= $patient['id'] ?>" class="list-group-item list-group-item-action">Bulletin d'examens</a>
+                    <a href="<?= BASE_URL ?>formulaire/creer/certificat-hospitalisation/<?= $patient['id'] ?>" class="list-group-item list-group-item-action">Certificat d'hospitalisation</a>
+                    <a href="<?= BASE_URL ?>hospitalisation/observations-evolution/<?= $patient['id'] ?>" class="list-group-item list-group-item-action fw-bold">Observations / Évolution</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS JAVASCRIPT -->
 <script>
-// Gestion des onglets
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. Initialisation des onglets Bootstrap
     var triggerTabList = [].slice.call(document.querySelectorAll('#myTab button'))
     triggerTabList.forEach(function (triggerEl) {
         var tabTrigger = new bootstrap.Tab(triggerEl)
@@ -367,9 +405,66 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault(); tabTrigger.show();
         })
     });
+
+    // 2. ACTIVATION DES FORMULAIRES DE BILAN (La partie qui manquait)
+    console.log("Initialisation des formulaires de bilan...");
+    setupAjaxBilan('formBilanLabo');
+    setupAjaxBilan('formBilanRadio');
 });
 
-// Vérification Stock Sang
+// Fonction universelle pour envoyer les demandes (Labo et Radio)
+function setupAjaxBilan(formId) {
+    const form = document.getElementById(formId);
+    if (!form) {
+        console.warn("Formulaire introuvable : " + formId);
+        return;
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Empêche le rechargement de la page
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+
+        // Feedback visuel
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Transmission...';
+
+        const formData = new FormData(this);
+
+        fetch('<?= BASE_URL ?>bilan/save', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => {
+            // On vérifie si la réponse est bien du JSON
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return res.json();
+            } else {
+                return res.text().then(text => { throw new Error("Réponse serveur non-JSON : " + text) });
+            }
+        })
+        .then(data => {
+            if (data.success) {
+                alert("✅ " + data.message);
+                location.reload(); // Rafraîchit pour voir la demande dans le suivi
+            } else {
+                alert("❌ Erreur : " + data.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(err => {
+            console.error("Erreur Fetch :", err);
+            alert("Erreur technique de communication avec le serveur.");
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    });
+}
+
+// 3. Vérification Stock Banque de Sang
 function checkBloodStock() {
     const g = document.getElementById('trans_groupe').value;
     const r = document.getElementById('trans_rhesus').value;

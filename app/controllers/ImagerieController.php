@@ -30,11 +30,13 @@ class ImagerieController extends UnifiedController {
 
         // 2. Liste des examens (Utilisation des noms de colonnes réels de la table)
         $sql = "SELECT i.*, p.nom, p.prenom, p.dossier_numero,
-                       u.nom as medecin_nom, u.prenom as medecin_prenom
-                FROM demandes_imagerie i
-                JOIN patients p ON i.patient_id = p.id
-                JOIN users u ON i.medecin_id = u.id
-                ORDER BY (i.urgence = 'URGENT') DESC, i.date_creation DESC";
+               COALESCE(u.nom, 'Médecin inconnu') as medecin_nom
+        FROM demandes_imagerie i
+        JOIN patients p ON i.patient_id = p.id
+        LEFT JOIN users u ON i.medecin_id = u.id -- On utilise LEFT JOIN ici
+        WHERE i.statut != 'interprete' OR DATE(i.date_resultats) = CURDATE()
+        ORDER BY (i.urgence = 'URGENT') DESC, i.date_creation DESC";
+
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
@@ -46,70 +48,88 @@ class ImagerieController extends UnifiedController {
     /**
      * UPLOAD - Traitement du fichier et de l'interprétation initiale
      */
-    public function upload() {
-        $this->auth->requirePermission('laboratoire', 'write');
+   public function upload() {
         header('Content-Type: application/json');
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                $imagerie_id = $_POST['imagerie_id'];
-                $interpretation = htmlspecialchars($_POST['interpretation'] ?? '');
-                $conclusion = htmlspecialchars($_POST['conclusion'] ?? '');
-                $file = $_FILES['dicom_file'];
-
-                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                $upload_dir = __DIR__ . '/../../assets/uploads/dicom/';
-                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
-
-                $filename = 'img_' . $imagerie_id . '_' . time() . '.' . $ext;
-                $filepath = $upload_dir . $filename;
-
-                if (move_uploaded_file($file['tmp_name'], $filepath)) {
-                    $sql = "UPDATE demandes_imagerie
-                            SET fichier_dicom = :filename,
-                                interpretation = :interp,
-                                conclusion = :concl,
-                                statut = 'termine',
-                                date_examen = NOW()
-                            WHERE id = :id";
-                    $this->db->prepare($sql)->execute([
-                        ':filename' => $filename,
-                        ':interp' => $interpretation,
-                        ':concl' => $conclusion,
-                        ':id' => $imagerie_id
-                    ]);
-
-                    echo json_encode(['success' => true, 'message' => 'Examen enregistré']);
-                }
-            } catch (Exception $e) {
-                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-            }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
             exit;
         }
+
+        try {
+            $id = $_POST['imagerie_id'];
+            $file = $_FILES['dicom_file'] ?? null;
+
+            if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("Erreur de transfert : " . ($file ? $file['error'] : 'Fichier manquant'));
+            }
+
+            // 1. Définition des dossiers
+            $upload_dir = __DIR__ . '/../../assets/uploads/dicom/';
+            if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
+            // 2. Nettoyage du nom de fichier
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'dcm';
+            $new_name = 'IMG_' . $id . '_' . time() . '.' . $ext;
+            $destination = $upload_dir . $new_name;
+
+            // 3. Déplacement du fichier
+            if (move_uploaded_file($file['tmp_name'], $destination)) {
+
+                // 4. Mise à jour de la base de données UNIQUEMENT si le fichier est sur le disque
+                $sql = "UPDATE demandes_imagerie SET
+                        fichier_dicom = ?,
+                        statut = 'termine',
+                        interpretation = ?,
+                        conclusion = ?,
+                        date_examen = NOW()
+                        WHERE id = ?";
+
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    $new_name,
+                    $_POST['interpretation'] ?? '',
+                    $_POST['conclusion'] ?? '',
+                    $id
+                ]);
+
+                echo json_encode(['success' => true, 'message' => 'Fichier uploadé avec succès']);
+            } else {
+                throw new Exception("Impossible d'écrire le fichier sur le disque. Vérifiez les permissions du dossier assets/uploads/dicom/");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
     }
     /**
      * SERVIR LE FICHIER DICOM (Flux binaire sécurisé pour le viewer)
      */
     public function fetchDicom($id) {
-        $this->auth->requirePermission('laboratoire', 'read');
-        $stmt = $this->db->prepare("SELECT fichier_dicom FROM demandes_imagerie WHERE id = ?");
-        $stmt->execute([$id]);
-        $filename = $stmt->fetchColumn();
+    // On vide tout tampon pour éviter d'envoyer du texte parasite
+    if (ob_get_length()) ob_clean();
 
-        $path = __DIR__ . '/../../assets/uploads/dicom/' . $filename;
+    $stmt = $this->db->prepare("SELECT fichier_dicom FROM demandes_imagerie WHERE id = ?");
+    $stmt->execute([$id]);
+    $filename = $stmt->fetchColumn();
 
-        if ($filename && file_exists($path)) {
-            header('Content-Type: application/dicom');
-            header('Content-Length: ' . filesize($path));
-            header('Access-Control-Allow-Origin: *');
-            readfile($path);
-            exit;
-        } else {
-            http_response_code(404);
-            exit;
-        }
+    // Chemin correspondant à votre capture d'écran (assets/uploads/dicom/)
+    $path = $_SERVER['DOCUMENT_ROOT'] . '/dme_hospital/assets/uploads/dicom/' . $filename;
+
+    if ($filename && file_exists($path)) {
+        header('Content-Type: application/dicom');
+        header('Content-Length: ' . filesize($path));
+        header('Access-Control-Allow-Origin: *');
+        header('Cache-Control: no-cache');
+        readfile($path);
+        exit;
+    } else {
+        http_response_code(404);
+        echo "Fichier introuvable. Chemin tenté : " . $path;
+        exit;
     }
-
+}
     /**
      * VISUALISEUR - Charge la page du viewer CornerstoneJS
      */
@@ -168,4 +188,45 @@ class ImagerieController extends UnifiedController {
                      ->execute([$preview_filename, $imagerie_id]);
         }
     }
+
+    public function delete($id) {
+    $this->auth->requirePermission('laboratoire', 'write');
+
+    // On vide tout tampon de sortie pour éviter les Warnings PHP dans le JSON
+    if (ob_get_length()) ob_clean();
+    header('Content-Type: application/json');
+
+    try {
+        $stmt = $this->db->prepare("SELECT fichier_dicom, fichier_preview FROM demandes_imagerie WHERE id = ?");
+        $stmt->execute([$id]);
+        $examen = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$examen) {
+            echo json_encode(['success' => false, 'message' => "Examen introuvable"]);
+            exit;
+        }
+
+        // Chemins des fichiers
+        $dirDicom = __DIR__ . '/../../assets/uploads/dicom/';
+        $dirPreview = __DIR__ . '/../../assets/uploads/previews/';
+
+        // Suppression physique sécurisée (on vérifie si le champ n'est pas vide ET si le fichier existe)
+        if (!empty($examen['fichier_dicom']) && file_exists($dirDicom . $examen['fichier_dicom'])) {
+            unlink($dirDicom . $examen['fichier_dicom']);
+        }
+
+        if (!empty($examen['fichier_preview']) && file_exists($dirPreview . $examen['fichier_preview'])) {
+            unlink($dirPreview . $examen['fichier_preview']);
+        }
+
+        // Suppression en base de données
+        $delete = $this->db->prepare("DELETE FROM demandes_imagerie WHERE id = ?");
+        $success = $delete->execute([$id]);
+
+        echo json_encode(['success' => $success]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
 }

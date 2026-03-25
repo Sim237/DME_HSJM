@@ -118,33 +118,33 @@
 
     // Chargement de l'image
     async function initViewer() {
-        try {
-            const imageId = "wadouri:" + FETCH_URL;
-            const image = await cornerstone.loadAndCacheImage(imageId);
-            cornerstone.displayImage(element, image);
+    try {
+        const fetchUrl = window.location.origin + "/dme_hospital/imagerie/fetchDicom/" + EXAMEN_ID;
+        const imageId = "wadouri:" + fetchUrl;
 
-            // Initialisation des outils
-            cornerstoneTools.init();
-            activateTool('Pan');
+        console.log("Tentative de chargement de : " + imageId);
 
-            // Mise à jour des overlays lors des changements
-            element.addEventListener('cornerstoneimagerendered', function(e) {
-                const viewport = cornerstone.getViewport(element);
-                document.getElementById('val-lh').innerText = Math.round(viewport.voi.windowWidth);
-                document.getElementById('val-lc').innerText = Math.round(viewport.voi.windowCenter);
-                document.getElementById('val-zoom').innerText = viewport.scale.toFixed(2);
-            });
+        const image = await cornerstone.loadAndCacheImage(imageId);
+        cornerstone.displayImage(element, image);
 
-            // GÉNÉRER LA MINIATURE AUTOMATIQUEMENT SI ELLE N'EXISTE PAS
-            <?php if(!$examen['fichier_preview']): ?>
-                setTimeout(saveAutoThumbnail, 2000);
-            <?php endif; ?>
+        // --- APRES AFFICHAGE : GENERER LA MINIATURE ---
+        setTimeout(() => {
+            const canvas = element.querySelector('canvas');
+            if (canvas) {
+                const dataURL = canvas.toDataURL('image/jpeg', 0.6); // Qualité 60%
+                const fd = new FormData();
+                fd.append('imagerie_id', '<?= $examen['id'] ?>');
+                fd.append('image_data', dataURL);
 
-        } catch(err) {
-            console.error(err);
-            alert("Erreur lors de l'accès au fichier DICOM.");
-        }
+                // Envoi silencieux au serveur
+                fetch('<?= BASE_URL ?>imagerie/saveThumbnail', { method: 'POST', body: fd });
+            }
+        }, 1500); // On attend 1.5s que l'image soit bien rendue
+
+    } catch (err) {
+        alert("Erreur de lecture du fichier DICOM. Le fichier est peut-être corrompu ou vide.");
     }
+}
 
     function activateTool(name) {
         const tools = ['Pan', 'Zoom', 'Wwwc', 'Length'];

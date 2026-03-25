@@ -1,10 +1,19 @@
 <?php
 class Database {
-    private $host = "localhost";
-    private $db_name = "dme_hospital";
-    private $username = "root";
-    private $password = "root";
+    // Supprimez les valeurs en dur
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
     public $conn;
+
+    public function __construct() {
+        // Utilise les constantes définies dans config.php (qui lit le .env)
+        $this->host = DB_HOST;
+        $this->db_name = DB_NAME;
+        $this->username = DB_USER;
+        $this->password = DB_PASS;
+    }
 
     public function getConnection() {
         $this->conn = null;
@@ -17,9 +26,8 @@ class Database {
             $this->conn->exec("set names utf8");
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch(PDOException $e) {
-            echo "Erreur de connexion: " . $e->getMessage();
+            die("Erreur de connexion Database: " . $e->getMessage());
         }
         return $this->conn;
     }
 }
-?>

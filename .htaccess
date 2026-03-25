@@ -5,29 +5,25 @@ Options -MultiViews
 # 2. Activer le moteur de réécriture
 RewriteEngine On
 
-# 3. Définir la base
-# ⚠️  RÈGLE : DocumentRoot MAMP doit pointer DIRECTEMENT sur le dossier DME_HSJM
-#     → MAMP PRO : Hosts > Document Root = /chemin/vers/DME_HSJM  → RewriteBase /
-#     → Si le projet est dans un sous-dossier /dme_hospital/       → RewriteBase /dme_hospital/
-RewriteBase /
+# 3. Base du projet (sous-dossier XAMPP)
+RewriteBase /dme_hospital/
 
-# 4. Support des fichiers DICOM (pour que le navigateur les reconnaisse)
+# 4. Support des fichiers DICOM
 AddType application/dicom .dcm
 AddType application/dicom .dicom
 
 # 5. Forcer le type MIME pour les images de preview
 AddType image/jpeg .jpg .jpeg
 
-# 6. CONDITIONS : Si le fichier ou dossier existe physiquement, on ne fait rien
+# 6. Si le fichier ou dossier existe physiquement, on ne fait rien
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# 7. RÈGLE : Sinon, on redirige tout vers index.php
-# Le [L] signifie "Last" (dernière règle), [QSA] garde les paramètres ?id=...
+# 7. Sinon, tout vers index.php
 RewriteRule ^(.*)$ index.php [QSA,L]
 
-# 8. Protection des fichiers sensibles (Optionnel mais recommandé)
-<FilesMatch "\.(sql|log|ini|sh|bak)$">
+# 8. Protection des fichiers sensibles
+<FilesMatch "\.(sql|log|ini|sh|bak|env)$">
     Order allow,deny
     Deny from all
 </FilesMatch>

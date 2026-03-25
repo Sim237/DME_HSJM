@@ -253,6 +253,62 @@
     </div>
 </div>
 
+<div class="med-card">
+    <div class="card-header-custom">
+        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-search me-2"></i>Suivi des Bilans Demandés</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr class="small text-muted text-uppercase">
+                    <th>Type</th>
+                    <th>Examen / Zone</th>
+                    <th>Statut</th>
+                    <th class="text-end">Action</th> <!-- Nouvelle colonne -->
+                </tr>
+            </thead>
+            <tbody>
+                <?php if(!empty($suivi_bilans)): foreach($suivi_bilans as $b): ?>
+                    <tr>
+                        <td><span class="badge bg-light text-dark border"><?= $b['type'] ?></span></td>
+                        <td><strong><?= htmlspecialchars($b['label']) ?></strong></td>
+                        <td>
+                            <?php if($b['statut'] == 'EN_ATTENTE'): ?>
+                                <span class="text-warning small fw-bold"><i class="bi bi-clock-history"></i> Au service</span>
+                            <?php else: ?>
+                                <span class="text-success small fw-bold"><i class="bi bi-check-circle-fill"></i> Prêt</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-end">
+                            <?php if($b['statut'] != 'EN_ATTENTE'): ?>
+                                <?php if($b['type'] == 'Labo'): ?>
+                                    <!-- Bouton pour voir les résultats de Labo (ouvre la liste des patients ou un résumé) -->
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3"
+                                            onclick="alert('Résultats Labo : <?= addslashes($b['label']) ?> disponibles dans le dossier.')">
+                                        <i class="bi bi-eye"></i> Voir
+                                    </button>
+                                <?php else: ?>
+                                    <!-- Bouton pour ouvrir le Viewer Radio directement -->
+                                    <a href="<?= BASE_URL ?>imagerie/viewer/<?= $b['record_id'] ?>"
+                                       class="btn btn-sm btn-primary rounded-pill px-3">
+                                        <i class="bi bi-eye"></i> Voir
+                                    </a>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <button class="btn btn-sm btn-light rounded-pill px-3 disabled" title="En attente de traitement">
+                                    <i class="bi bi-hourglass"></i>
+                                </button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; else: ?>
+                    <tr><td colspan="4" class="text-center py-4 text-muted small">Aucun bilan en cours.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
             <!-- ================= SECTION MES RENDEZ-VOUS ================= -->
 <div class="med-card">
     <div class="card-header-custom">
