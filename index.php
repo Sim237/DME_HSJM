@@ -335,6 +335,12 @@ case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
         (new LaboratoireController())->index();
         break;
 
+    // API : liste des examens disponibles pour le formulaire de consultation
+    case ($request == 'laboratoire/examens-disponibles'):
+        require_once 'app/controllers/LaboratoireController.php';
+        (new LaboratoireController())->examensDisponibles();
+        break;
+
     // Route pour traiter une demande spécifique (Regex corrigée)
     case (preg_match('#^laboratoire/traitement/([0-9]+)$#', $request, $matches)):
         require_once 'app/controllers/LaboratoireController.php';

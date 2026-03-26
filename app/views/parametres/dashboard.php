@@ -166,6 +166,7 @@
                                 <option value="2">Chirurgie</option>
                                 <option value="4">Maternité</option>
                                 <option value="5">Pédiatrie</option>
+                                <option value="5">Consultation Externes</option>
                             </select>
                         </div>
                         <div class="col-md-6">
