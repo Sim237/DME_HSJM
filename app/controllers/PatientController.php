@@ -254,6 +254,30 @@ $stmtH = $this->db->prepare("
 $stmtH->execute([$id]);
 $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
 
+// Dans PatientController.php, méthode dossier($id)
+$sqlSuivi = "
+    (SELECT 'Labo' as type,
+            CONCAT(COUNT(de.id), ' examen(s): ', GROUP_CONCAT(DISTINCT el.nom SEPARATOR ', ')) as label,
+            MAX(dl.statut) as statut,
+            MAX(dl.date_creation) as date_creation,
+            dl.id as record_id
+     FROM demandes_laboratoire dl
+     JOIN demande_examens de ON dl.id = de.demande_id
+     JOIN examens_laboratoire el ON de.examen_id = el.id
+     WHERE dl.patient_id = ?
+     AND dl.statut != 'VALIDES'
+     GROUP BY dl.id)
+    UNION
+    (SELECT 'Radio' as type, di.partie_code as label, di.statut, di.date_creation, di.id as record_id
+     FROM demandes_imagerie di
+     WHERE di.patient_id = ?
+     AND di.statut != 'interprete')
+    ORDER BY date_creation DESC LIMIT 10";
+
+$stmtW = $this->db->prepare($sqlSuivi);
+$stmtW->execute([$id, $id]); // $id est votre patient_id
+$suivi_bilans = $stmtW->fetchAll(PDO::FETCH_ASSOC);
+
         //var_dump($parametres); die();
 
         // 7. Chargement de la vue avec toutes les variables préparées

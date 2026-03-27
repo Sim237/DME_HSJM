@@ -302,13 +302,20 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
 
        // 2. RÉCUPÉRATION DU SUIVI DES BILANS (Labo + Radio)
         // Cette requête récupère les demandes qui n'ont pas encore été validées/lues
-        $sqlSuivi = "
-    (SELECT 'Labo' as type, el.nom as label, dl.statut, dl.date_creation, dl.id as record_id
+    $sqlSuivi = "
+    (SELECT 'Labo' as type,
+            CONCAT(\`Nb examens: \`, COUNT(de.id), \` (\`, GROUP_CONCAT(DISTINCT el.nom SEPARATOR ', ') \`) \`) as label,
+            MAX(dl.statut) as statut,
+            MAX(dl.date_creation) as date_creation,
+            dl.id as record_id,
+            MAX(dl.patient_id) as patient_id
      FROM demandes_laboratoire dl
-     JOIN examens_laboratoire el ON dl.examen_id = el.id
-     WHERE dl.medecin_id = ? AND dl.statut != 'VALIDES')
+     JOIN demande_examens de ON dl.id = de.demande_id
+     JOIN examens_laboratoire el ON de.examen_id = el.id
+     WHERE dl.medecin_id = ? AND dl.statut != 'VALIDES'
+     GROUP BY dl.id)
     UNION
-    (SELECT 'Radio' as type, di.partie_code as label, di.statut, di.date_creation, di.id as record_id
+    (SELECT 'Radio' as type, di.partie_code as label, di.statut, di.date_creation, di.id as record_id, di.patient_id
      FROM demandes_imagerie di
      WHERE di.medecin_id = ? AND di.statut != 'interprete')
     ORDER BY date_creation DESC LIMIT 10";
