@@ -309,6 +309,62 @@
     </div>
 </div>
 
+<!-- SECTION : DOSSIERS PARTAGÉS (Dashboard Médecin) -->
+<div class="med-card shadow-sm border-0">
+    <div class="card-header-custom bg-info text-white rounded-top-4 py-3">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-share me-2"></i>Dossiers Partagés</h6>
+    </div>
+    <div class="card-body p-3">
+        <!-- Navigation des onglets -->
+        <ul class="nav nav-pills nav-justified mb-3" id="partageTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill fw-bold" data-bs-toggle="pill" data-bs-target="#reçus" type="button">
+                    <i class="bi bi-inbox me-2"></i>Reçus
+                    <span class="badge bg-light text-primary ms-2"><?= is_array($dossiers_reçus) ? count($dossiers_reçus) : 0 ?></span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill fw-bold" data-bs-toggle="pill" data-bs-target="#envoyés" type="button">
+                    <i class="bi bi-send me-2"></i>Envoyés
+                    <span class="badge bg-light text-primary ms-2"><?= is_array($dossiers_envoyés) ? count($dossiers_envoyés) : 0 ?></span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenu des onglets -->
+        <div class="tab-content">
+            <!-- DOSSIERS REÇUS -->
+            <div class="tab-pane fade show active" id="reçus" role="tabpanel">
+                <?php if(!empty($dossiers_reçus) && is_array($dossiers_reçus)): foreach($dossiers_reçus as $r): ?>
+                    <div class="alert alert-light border mb-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="text-primary"><?= htmlspecialchars($r['nom'].' '.$r['prenom']) ?></strong><br>
+                            <small class="text-muted"><i class="bi bi-person-fill"></i> Envoyé par Dr. <?= htmlspecialchars($r['expediteur_nom']) ?></small>
+                        </div>
+                        <a href="<?= BASE_URL ?>patients/dossier/<?= $r['patient_id'] ?>" class="btn btn-sm btn-info text-white rounded-pill px-3">
+                            <i class="bi bi-eye"></i> Consulter
+                        </a>
+                    </div>
+                <?php endforeach; else: ?>
+                    <div class="text-center py-4 text-muted small italic">Aucun dossier reçu.</div>
+                <?php endif; ?>
+            </div>
+
+            <!-- DOSSIERS ENVOYÉS -->
+            <div class="tab-pane fade" id="envoyés" role="tabpanel">
+                <?php if(!empty($dossiers_envoyés) && is_array($dossiers_envoyés)): foreach($dossiers_envoyés as $e): ?>
+                    <div class="alert alert-light border mb-2">
+                        <strong class="text-dark"><?= htmlspecialchars($e['nom'].' '.$e['prenom']) ?></strong><br>
+                        <small class="text-muted"><i class="bi bi-send-check"></i> Partagé à Dr. <?= htmlspecialchars($e['destinataire_nom']) ?></small>
+                    </div>
+                <?php endforeach; else: ?>
+                    <div class="text-center py-4 text-muted small italic">Aucun dossier envoyé.</div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
             <!-- ================= SECTION MES RENDEZ-VOUS ================= -->
 <div class="med-card">
     <div class="card-header-custom">

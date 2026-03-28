@@ -562,6 +562,31 @@ case ($request == 'bilan/save'):
     (new BilanController())->save();
     break;
 
+case ($request == 'api/get-users'):
+    require_once 'app/controllers/ApiController.php';
+    (new ApiController())->getUsersByService();
+    break;
+
+    // Dans index.php, cherchez la section patients ou ajoutez ceci :
+case ($request == 'patients/partager-dossier'):
+    require_once 'app/controllers/PatientController.php';
+    (new PatientController())->partagerDossier();
+    break;
+
+case (preg_match('/hospitalisation\/suivi\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->suivi($matches[1]);
+    break;
+
+case ($request == 'hospitalisation/add-soin'):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->planifierSoin();
+    break;
+
+case ($request == 'hospitalisation/add-constantes'):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->ajouterConstantes();
+    break;
     /* ============================================================
        DEFAUT : 404
        ============================================================ */

@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sélection du Service - DME Hospital</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">-->
+    <!--<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">-->
 
+     <!-- CHARGEMENT LOCAL -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/fonts.css">
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.4);

@@ -12,6 +12,9 @@ require_once __DIR__ . '/../services/AuditService.php';
 
 class DashboardController extends UnifiedController {
 
+private $db; // Déclaré ici
+    private $patientModel;
+
     public function __construct() {
         parent::__construct();
         $this->patientModel = new Patient();
@@ -233,6 +236,8 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
     $mes_rdv = [];
     $patients_consultes = [];
     $mes_taches = [];
+    $dossiers_reçus = [];   // <--- AJOUTER CECI
+    $dossiers_envoyés = []; // <--- AJOUTER CECI
 
     try {
         // 2. RÉCUPÉRATION DES PATIENTS EN SALLE D'ATTENTE (Consultations externes / Urgences)
@@ -302,20 +307,13 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
 
        // 2. RÉCUPÉRATION DU SUIVI DES BILANS (Labo + Radio)
         // Cette requête récupère les demandes qui n'ont pas encore été validées/lues
-    $sqlSuivi = "
-    (SELECT 'Labo' as type,
-            CONCAT(\`Nb examens: \`, COUNT(de.id), \` (\`, GROUP_CONCAT(DISTINCT el.nom SEPARATOR ', ') \`) \`) as label,
-            MAX(dl.statut) as statut,
-            MAX(dl.date_creation) as date_creation,
-            dl.id as record_id,
-            MAX(dl.patient_id) as patient_id
+        $sqlSuivi = "
+    (SELECT 'Labo' as type, el.nom as label, dl.statut, dl.date_creation, dl.id as record_id
      FROM demandes_laboratoire dl
-     JOIN demande_examens de ON dl.id = de.demande_id
-     JOIN examens_laboratoire el ON de.examen_id = el.id
-     WHERE dl.medecin_id = ? AND dl.statut != 'VALIDES'
-     GROUP BY dl.id)
+     JOIN examens_laboratoire el ON dl.examen_id = el.id
+     WHERE dl.medecin_id = ? AND dl.statut != 'VALIDES')
     UNION
-    (SELECT 'Radio' as type, di.partie_code as label, di.statut, di.date_creation, di.id as record_id, di.patient_id
+    (SELECT 'Radio' as type, di.partie_code as label, di.statut, di.date_creation, di.id as record_id
      FROM demandes_imagerie di
      WHERE di.medecin_id = ? AND di.statut != 'interprete')
     ORDER BY date_creation DESC LIMIT 10";
@@ -323,6 +321,30 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
 $stmtW = $db->prepare($sqlSuivi);
 $stmtW->execute([$userId, $userId]);
 $suivi_bilans = $stmtW->fetchAll(PDO::FETCH_ASSOC);
+
+// --- DOSSIERS REÇUS (Pour moi) ---
+$stmtReçus = $db->prepare("
+    SELECT p.nom, p.prenom, pd.id as partage_id, pd.avis_medecin,
+           u.nom as expediteur_nom, pd.date_partage
+    FROM partages_dossiers pd
+    JOIN patients p ON pd.patient_id = p.id
+    JOIN users u ON pd.expediteur_id = u.id
+    WHERE pd.destinataire_id = ? AND pd.date_expiration > NOW()
+");
+$stmtReçus->execute([$userId]);
+$dossiers_reçus = $stmtReçus->fetchAll(PDO::FETCH_ASSOC);
+
+// --- DOSSIERS ENVOYÉS (Par moi) ---
+$stmtEnvoyés = $db->prepare("
+    SELECT p.nom, p.prenom, pd.id as partage_id, pd.avis_medecin,
+           u.nom as destinataire_nom, pd.date_partage
+    FROM partages_dossiers pd
+    JOIN patients p ON pd.patient_id = p.id
+    JOIN users u ON pd.destinataire_id = u.id
+    WHERE pd.expediteur_id = ? AND pd.date_expiration > NOW()
+");
+$stmtEnvoyés->execute([$userId]);
+$dossiers_envoyés = $stmtEnvoyés->fetchAll(PDO::FETCH_ASSOC);
 
 
     } catch (PDOException $e) {

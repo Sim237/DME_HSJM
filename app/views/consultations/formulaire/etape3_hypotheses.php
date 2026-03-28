@@ -50,7 +50,7 @@ include __DIR__ . '/../../layouts/header.php';
                         <!-- Remplacer le bloc "Diagnostic Principal" par ceci -->
 <div class="mb-4">
     <label class="form-label fw-bold">
-        <i class="fas fa-check-circle text-success"></i> Diagnostic Principal (CIM-10) *
+        <i class="fas fa-check-circle text-success"></i> Diagnostic Principal (CIM-10) *  ou de Travail
     </label>
     <div class="position-relative">
         <input type="text" class="form-control" id="searchCim10"

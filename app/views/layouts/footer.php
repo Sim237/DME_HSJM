@@ -1,15 +1,11 @@
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        $(document).ready(function() {
-            // Supprimer les modal-backdrop
-            $('.modal-backdrop').remove();
-            $('.modal').removeClass('show').hide();
-            $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
-        });
-    </script>
+<!-- JAVASCRIPT LOCAL -->
+    <script src="<?= BASE_URL ?>public/js/jquery.min.js"></script>
+    <script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>public/js/main.js"></script>
+
+    <!-- Scripts spécifiques à certaines pages (si besoin) -->
+    <?php if (isset($extra_js)): ?>
+        <script src="<?= BASE_URL ?>public/js/<?= $extra_js ?>"></script>
+    <?php endif; ?>
 </body>
 </html>
