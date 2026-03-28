@@ -3,7 +3,7 @@
 <div class="container-fluid">
     <div class="row">
         <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
-        
+
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">
@@ -65,8 +65,8 @@
                                                 <h6 class="fw-bold"><?= htmlspecialchars($traitement['medicament_nom']) ?></h6>
                                                 <p class="mb-1"><?= htmlspecialchars($traitement['posologie']) ?></p>
                                                 <small class="text-muted">
-                                                    <?= $traitement['voie_administration'] ?> - 
-                                                    <?= $traitement['frequence'] ?> - 
+                                                    <?= $traitement['voie_administration'] ?> -
+                                                    <?= $traitement['frequence'] ?> -
                                                     <?= $traitement['heure_debut'] ?> à <?= $traitement['heure_fin'] ?>
                                                 </small>
                                             </div>
@@ -84,7 +84,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-header">
@@ -111,12 +111,12 @@
                                 <div class="card-body">
                                     <form id="formConstantes">
                                         <input type="hidden" name="patient_id" value="<?= $patient['patient_id'] ?>">
-                                        
+
                                         <div class="mb-3">
                                             <label class="form-label">Température (°C)</label>
                                             <input type="number" step="0.1" class="form-control" name="temperature">
                                         </div>
-                                        
+
                                         <div class="row">
                                             <div class="col-6">
                                                 <label class="form-label">TA Systolique</label>
@@ -127,22 +127,22 @@
                                                 <input type="number" class="form-control" name="tension_diastolique">
                                             </div>
                                         </div>
-                                        
+
                                         <div class="mb-3 mt-3">
                                             <label class="form-label">Fréquence cardiaque</label>
                                             <input type="number" class="form-control" name="frequence_cardiaque">
                                         </div>
-                                        
+
                                         <div class="mb-3">
                                             <label class="form-label">Saturation O2 (%)</label>
                                             <input type="number" class="form-control" name="saturation_o2">
                                         </div>
-                                        
+
                                         <div class="mb-3">
                                             <label class="form-label">Glycémie (g/L)</label>
                                             <input type="number" step="0.01" class="form-control" name="glycemie">
                                         </div>
-                                        
+
                                         <button type="button" class="btn btn-primary w-100" onclick="sauvegarderConstantes()">
                                             <i class="bi bi-save"></i> Enregistrer
                                         </button>
@@ -150,7 +150,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-8">
                             <div class="card">
                                 <div class="card-header">
@@ -221,19 +221,19 @@
             <div class="modal-body">
                 <form id="formNouveauTraitement">
                     <input type="hidden" name="patient_id" value="<?= $patient['patient_id'] ?>">
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Médicament</label>
                         <select class="form-select" name="medicament_id" required>
                             <!-- Charger via AJAX -->
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Posologie</label>
                         <input type="text" class="form-control" name="posologie" required>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Voie d'administration</label>
                         <select class="form-select" name="voie_administration">
@@ -243,7 +243,7 @@
                             <option value="sc">Sous-cutanée</option>
                         </select>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-6">
                             <label class="form-label">Heure début</label>
@@ -264,7 +264,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
 <script>
 function administrer(prescriptionId) {
     const dose = prompt('Dose administrée:');
@@ -292,7 +292,7 @@ function sauvegarderConstantes() {
     const form = document.getElementById('formConstantes');
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
-    
+
     fetch('/hospitalisation/ajouter-constantes', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},

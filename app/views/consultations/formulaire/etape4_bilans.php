@@ -331,45 +331,31 @@ function retirerExamen(index) {
 
 function envoyerAuLaboratoire() {
     if (examensLaboratoire.length === 0) {
-        alert('Veuillez d\'abord ajouter au moins un examen à la liste.');
+        alert('Veuillez d\'abord ajouter au moins un examen.');
         return;
     }
 
     const patientId = document.querySelector('input[name="patient_id"]').value;
     const btn = document.getElementById('btnEnvoyerLabo');
-
-    // UI Feedback
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
+    btn.innerHTML = 'Envoi...';
 
     fetch('<?= BASE_URL ?>laboratoire/creer-demande-consultation', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            patient_id: patientId,
-            examens: examensLaboratoire
-        })
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ patient_id: patientId, examens: examensLaboratoire })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert('✅ Demande transmise avec succès au laboratoire !');
-            // On vide la liste locale après succès
+            // Pas de window.location.href ici
+            alert('✅ Demande envoyée ! Elle apparaîtra dans votre suivi de bilans.');
             examensLaboratoire = [];
             afficherListeExamens();
-            btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Envoyer au Laboratoire';
+            btn.innerHTML = '<i class="bi bi-send"></i> Envoyé';
         } else {
-            alert('❌ Erreur : ' + (data.message || 'Erreur inconnue'));
-            btn.disabled = false;
-            btn.innerHTML = 'Réessayer l\'envoi';
+            alert('❌ Erreur : ' + data.message);
         }
-    })
-    .catch(error => {
-        console.error('Erreur:', error);
-        alert('Erreur technique lors de l\'envoi. Vérifiez votre connexion.');
-        btn.disabled = false;
     });
 }
 </script>

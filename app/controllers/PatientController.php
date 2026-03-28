@@ -306,4 +306,39 @@ $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
             $registreModel->addMaladieChronique($data);
         }
     }
+
+    // Dans PatientController.php
+// Dans app/controllers/PatientController.php
+public function partagerDossier() {
+    $this->auth->requirePermission('patients', 'write');
+
+    // Vérification de sécurité
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . BASE_URL . 'patients');
+        exit;
+    }
+
+    $patient_id = $_POST['patient_id'];
+    $destinataire_id = $_POST['destinataire_id'];
+    $expediteur_id = $_SESSION['user_id'];
+    $service_id = $_POST['service_id'];
+
+    // Partage valable 1 heure
+    $date_exp = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+    $stmt = $this->db->prepare("
+        INSERT INTO partages_dossiers
+        (patient_id, expediteur_id, destinataire_id, service_id, date_expiration)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+
+    $success = $stmt->execute([$patient_id, $expediteur_id, $destinataire_id, $service_id, $date_exp]);
+
+    if ($success) {
+        header('Location: ' . BASE_URL . 'patients/dossier/'.$patient_id.'?success=partage');
+    } else {
+        header('Location: ' . BASE_URL . 'patients/dossier/'.$patient_id.'?error=echec_partage');
+    }
+    exit;
+}
 }

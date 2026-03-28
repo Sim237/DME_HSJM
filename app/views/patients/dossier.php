@@ -98,6 +98,9 @@ if (!empty($patient['date_naissance'])) {
 
             <button type="button" class="btn btn-danger btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTransfusion"><i class="bi bi-droplet-fill"></i> A Transfuser</button>
             <button type="button" class="btn btn-info btn-sm text-white shadow-sm" data-bs-toggle="modal" data-bs-target="#modalBilan"><i class="bi bi-flask"></i> Demander Bilans</button>
+            <button class="btn btn-info btn-sm shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#modalPartager">
+    <i class="bi bi-share"></i> Partager le dossier
+</button>
             <a href="<?= BASE_URL ?>hospitalisation/planifier-soins/<?= $patient['id'] ?>" class="btn btn-primary btn-sm shadow-sm"><i class="bi bi-calendar-check"></i> Planifier Soins</a>
             <button type="button" class="btn btn-dark btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalListeFormulaires"><i class="bi bi-file-earmark-text"></i> Mes formulaires</button>
         </div>
@@ -378,6 +381,37 @@ if (!empty($patient['date_naissance'])) {
     </div>
 </div>
 
+<div class="modal fade" id="modalPartager" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="<?= BASE_URL ?>patients/partager-dossier" method="POST" class="modal-content">
+            <input type="hidden" name="patient_id" value="<?= $patient['id'] ?>">
+            <div class="modal-header"><h5>Partager le dossier</h5></div>
+            <div class="modal-body">
+                <select name="service_id" id="selService" class="form-select mb-2" onchange="loadUsers()" required>
+    <option value="">Choisir un service</option>
+    <?php
+    $db = (new Database())->getConnection();
+    $services = $db->query("SELECT id, nom_service FROM services ORDER BY nom_service ASC")->fetchAll(PDO::FETCH_ASSOC);
+    foreach($services as $s): ?>
+        <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nom_service']) ?></option>
+    <?php endforeach; ?>
+</select>
+                <select name="role_cible" id="selRole" class="form-select mb-2" onchange="loadUsers()">
+                    <option value="">Choisir rôle</option>
+                    <option value="MEDECIN">Médecin</option>
+                    <option value="INFIRMIER">Infirmier</option>
+                </select>
+                <select name="destinataire_id" id="selUser" class="form-select" required>
+                    <option value="">Sélectionner la personne...</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Partager le dossier</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- MODALE LISTE FORMULAIRES -->
 <div class="modal fade" id="modalListeFormulaires" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -487,6 +521,33 @@ function checkBloodStock() {
             box.classList.add('alert-warning');
         }
     });
+}
+
+function loadUsers() {
+    const service = document.getElementById('selService').value;
+    const role = document.getElementById('selRole').value;
+    const selectUser = document.getElementById('selUser');
+
+    // Réinitialiser
+    selectUser.innerHTML = '<option value="">Sélectionner la personne...</option>';
+
+    if(service && role) {
+        // Afficher un petit chargement
+        selectUser.innerHTML = '<option value="">Chargement...</option>';
+
+        fetch(`<?= BASE_URL ?>api/get-users?service=${service}&role=${role}`)
+        .then(response => response.json())
+        .then(users => {
+            selectUser.innerHTML = '<option value="">Sélectionner la personne...</option>';
+            users.forEach(user => {
+                selectUser.innerHTML += `<option value="${user.id}">${user.nom} ${user.prenom}</option>`;
+            });
+        })
+        .catch(err => {
+            console.error('Erreur:', err);
+            selectUser.innerHTML = '<option value="">Erreur de chargement</option>';
+        });
+    }
 }
 </script>
 

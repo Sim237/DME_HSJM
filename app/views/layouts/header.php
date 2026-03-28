@@ -1,5 +1,12 @@
 <?php
-// Sécurité : Si BASE_URL n'est pas défini, on le définit par défaut
+// Vérification pour éviter les inclusions multiples
+if (!defined('HEADER_RENDERED')) {
+    define('HEADER_RENDERED', true);
+} else {
+    return; // Si déjà inclus, on s'arrête là
+}
+
+// Assurer que BASE_URL est défini
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/dme_hospital/');
 }
@@ -9,26 +16,27 @@ if (!defined('BASE_URL')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $config['app_name'] ?? 'DME Hospital'; ?></title>
+    <title><?= $config['app_name'] ?? 'DME Hospital - HSJM' ?></title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CHARGEMENT LOCAL (Pas de CDN) -->
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap.min.css">
+    <!-- FontAwesome (Local) -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/all.min.css">
+    <!-- Bootstrap Icons (Local) -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.min.css">
+    <!-- Polices locales -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/fonts.css">
+    <!-- Styles personnalisés -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/consultation-forms.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/responsive.css">
 
-    <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/fontawesome/all.min.css">
 
-    <!-- Custom Styles -->
-    <link href="<?php echo BASE_URL; ?>public/css/style.css" rel="stylesheet">
-    <link href="<?php echo BASE_URL; ?>public/css/responsive.css" rel="stylesheet">
-    <link href="<?php echo BASE_URL; ?>public/css/dashboard.css" rel="stylesheet">
-    <link href="<?php echo BASE_URL; ?>public/css/consultation-forms.css" rel="stylesheet">
-    <link href="<?php echo BASE_URL; ?>public/css/fix.css" rel="stylesheet">
+    <!-- Script de base (chargé tôt si besoin) -->
+    <script>
+        const BASE_URL = "<?= BASE_URL ?>";
+    </script>
 </head>
 <body>
-
-<?php
-// Indique que l'en-tête HTML principal a été rendu pour éviter les inclusions multiples
-if (!defined('HEADER_RENDERED')) {
-    define('HEADER_RENDERED', true);
-}
-?>

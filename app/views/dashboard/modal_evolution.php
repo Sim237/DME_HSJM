@@ -34,7 +34,11 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= BASE_URL ?>public/js/jquery.min.js"></script>
+    <script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>public/js/main.js"></script>
+
+<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
 <script>
 let evolutionData = {};
 let patientName = '';
@@ -105,3 +109,4 @@ function renderEvolutionCharts() {
     });
 }
 </script>
+

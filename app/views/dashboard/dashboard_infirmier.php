@@ -9,8 +9,8 @@ $lits_global = $lits_global ?? [];
 ?>
 
 <!-- IMPORT DES ICONES BOOTSTRAP ET DES ANIMATIONS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">-->
+<!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>-->
 
 <style>
     /* 1. CONFIGURATION LAYOUT PLEIN ÉCRAN */
@@ -213,6 +213,10 @@ $lits_global = $lits_global ?? [];
                                 <i class="bi bi-calendar-plus"></i> Planifier Soins
                             </a>
 
+                            <a href="<?= BASE_URL ?>hospitalisation/suivi/<?= $l['patient_id_reel'] ?? '0' ?>"
+                   class="btn btn-sm btn-info text-white rounded-pill">
+                   <i class="bi bi-speedometer2"></i> Paramètres
+                </a>
                             <button class="btn btn-link btn-sm text-muted text-decoration-none" onclick="libererLit(<?= $l['id'] ?>, '<?= addslashes($nomPatient) ?>')">
                                 <small>Libérer le lit</small>
                             </button>

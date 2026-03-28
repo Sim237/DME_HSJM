@@ -16,8 +16,11 @@ class Consultation {
 
     public function create($data) {
         try {
+            // Nettoyer les chaînes vides en NULL (important pour les champs DATE)
+            $data = $this->cleanEmptyStrings($data);
+
             $sql = "INSERT INTO consultations
-                    (patient_id, medecin_id, type, date_consultation, motif_consultation,
+                    (patient_id, medecin_id, type_consultation, type, date_consultation, motif_consultation,
                      histoire_maladie, automedication, complement_anamnese,
                      temperature, tension_arterielle, frequence_cardiaque, poids, taille,
                      examen_physique, resume_syndromique,
@@ -25,7 +28,7 @@ class Consultation {
                      examens_paracliniques, plan_traitement, traitement_non_medicamenteux,
                      surveillance, date_suivi)
                     VALUES
-                    (:patient_id, :medecin_id, :type, :date_consultation, :motif_consultation,
+                    (:patient_id, :medecin_id, :type_consultation, :type, :date_consultation, :motif_consultation,
                      :histoire_maladie, :automedication, :complement_anamnese,
                      :temperature, :tension_arterielle, :frequence_cardiaque, :poids, :taille,
                      :examen_physique, :resume_syndromique,
@@ -36,9 +39,10 @@ class Consultation {
             $stmt = $this->db->prepare($sql);
 
             $result = $stmt->execute([
-                ':patient_id' => $data['patient_id'],
-                ':medecin_id' => $data['medecin_id'],
-                ':type' => $data['type'],
+                ':patient_id' => $data['patient_id'] ?? null,
+                ':medecin_id' => $data['medecin_id'] ?? 1,
+                ':type_consultation' => strtolower(trim($data['type'] ?? 'externe')),
+                ':type' => $data['type'] ?? 'GENERALE',
                 ':date_consultation' => $data['date_consultation'] ?? date('Y-m-d H:i:s'),
                 ':motif_consultation' => $data['motif_consultation'] ?? null,
                 ':histoire_maladie' => $data['histoire_maladie'] ?? null,
@@ -64,9 +68,11 @@ class Consultation {
             if ($result) {
                 return $this->db->lastInsertId();
             }
+            $err = $stmt->errorInfo();
+            error_log("Erreur création consultation : " . implode(' | ', $err));
             return false;
         } catch (Exception $e) {
-            error_log("Erreur création consultation: " . $e->getMessage());
+            error_log("Exception création consultation: " . $e->getMessage());
             return false;
         }
     }
@@ -124,7 +130,12 @@ class Consultation {
     }
 
     public function update($id, $data) {
+        // Nettoyer les chaînes vides en NULL
+        $data = $this->cleanEmptyStrings($data);
+
         $sql = "UPDATE consultations SET
+                type_consultation = :type_consultation,
+                type = :type,
                 motif_consultation = :motif_consultation,
                 histoire_maladie = :histoire_maladie,
                 automedication = :automedication,
@@ -148,7 +159,7 @@ class Consultation {
 
         $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
+        $success = $stmt->execute([
             ':motif_consultation' => $data['motif_consultation'] ?? null,
             ':histoire_maladie' => $data['histoire_maladie'] ?? null,
             ':automedication' => $data['automedication'] ?? null,
@@ -166,10 +177,20 @@ class Consultation {
             ':examens_paracliniques' => $data['examens_paracliniques'] ?? null,
             ':plan_traitement' => $data['plan_traitement'] ?? null,
             ':traitement_non_medicamenteux' => $data['traitement_non_medicamenteux'] ?? null,
+            ':type_consultation' => strtolower(trim($data['type'] ?? 'externe')),
+            ':type' => $data['type'] ?? 'GENERALE',
             ':surveillance' => $data['surveillance'] ?? null,
             ':date_suivi' => $data['date_suivi'] ?? null,
             ':id' => $id
         ]);
+
+        if (!$success) {
+            $err = $stmt->errorInfo();
+            error_log("Erreur mise à jour consultation (ID={$id}) : " . implode(' | ', $err));
+            return false;
+        }
+
+        return true;
     }
 
     // app/models/Consultation.php
@@ -191,5 +212,20 @@ public function save($data) {
 
     return $db->lastInsertId();
 }
+
+    /**
+     * Nettoie les chaînes vides en NULL pour les champs DATE/optionnels
+     */
+    private function cleanEmptyStrings($data) {
+        $cleaned = [];
+        foreach ($data as $key => $value) {
+            if ($value === '' || $value === '0000-00-00') {
+                $cleaned[$key] = null;
+            } else {
+                $cleaned[$key] = $value;
+            }
+        }
+        return $cleaned;
+    }
 }
 ?>

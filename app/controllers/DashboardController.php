@@ -12,6 +12,9 @@ require_once __DIR__ . '/../services/AuditService.php';
 
 class DashboardController extends UnifiedController {
 
+private $db; // Déclaré ici
+    private $patientModel;
+
     public function __construct() {
         parent::__construct();
         $this->patientModel = new Patient();
@@ -233,6 +236,8 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
     $mes_rdv = [];
     $patients_consultes = [];
     $mes_taches = [];
+    $dossiers_reçus = [];   // <--- AJOUTER CECI
+    $dossiers_envoyés = []; // <--- AJOUTER CECI
 
     try {
         // 2. RÉCUPÉRATION DES PATIENTS EN SALLE D'ATTENTE (Consultations externes / Urgences)
@@ -316,6 +321,30 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
 $stmtW = $db->prepare($sqlSuivi);
 $stmtW->execute([$userId, $userId]);
 $suivi_bilans = $stmtW->fetchAll(PDO::FETCH_ASSOC);
+
+// --- DOSSIERS REÇUS (Pour moi) ---
+$stmtReçus = $db->prepare("
+    SELECT p.nom, p.prenom, pd.id as partage_id, pd.avis_medecin,
+           u.nom as expediteur_nom, pd.date_partage
+    FROM partages_dossiers pd
+    JOIN patients p ON pd.patient_id = p.id
+    JOIN users u ON pd.expediteur_id = u.id
+    WHERE pd.destinataire_id = ? AND pd.date_expiration > NOW()
+");
+$stmtReçus->execute([$userId]);
+$dossiers_reçus = $stmtReçus->fetchAll(PDO::FETCH_ASSOC);
+
+// --- DOSSIERS ENVOYÉS (Par moi) ---
+$stmtEnvoyés = $db->prepare("
+    SELECT p.nom, p.prenom, pd.id as partage_id, pd.avis_medecin,
+           u.nom as destinataire_nom, pd.date_partage
+    FROM partages_dossiers pd
+    JOIN patients p ON pd.patient_id = p.id
+    JOIN users u ON pd.destinataire_id = u.id
+    WHERE pd.expediteur_id = ? AND pd.date_expiration > NOW()
+");
+$stmtEnvoyés->execute([$userId]);
+$dossiers_envoyés = $stmtEnvoyés->fetchAll(PDO::FETCH_ASSOC);
 
 
     } catch (PDOException $e) {

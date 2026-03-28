@@ -1,7 +1,7 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <!-- Bibliothèques additionnelles pour le dynamisme -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>-->
 
 <style>
     :root {

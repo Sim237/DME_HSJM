@@ -4,26 +4,59 @@ $dossier = $dossier ?? [];
 $dernieres = $dernieres_constantes ?? [];
 ?>
 
+
 <!-- Inclusion de Chart.js pour les graphiques -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+
+<script src="<?= BASE_URL ?>public/js/chart.umd.js"></script>
+
+<style>
+/* Style pour les valeurs anormales */
+.vitals-warning {
+    background-color: #fffbeb !important;
+    border-color: #f59e0b !important;
+    animation: pulse-orange 2s infinite;
+}
+
+.vitals-critical {
+    background-color: #fee2e2 !important;
+    border-color: #ef4444 !important;
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes pulse-orange {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+</style>
 
 <div class="container-fluid">
     <div class="row">
         <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
-        
+
         <main class="col-md-10 ms-sm-auto px-md-4 mb-5">
-            
+
             <!-- En-tête Patient -->
             <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div>
                     <h1 class="h2"><i class="bi bi-heart-pulse"></i> Suivi Hospitalisation</h1>
                     <h5 class="text-primary">
-                        <?= htmlspecialchars($dossier['nom'] . ' ' . $dossier['prenom']) ?> 
+                        <?= htmlspecialchars($dossier['nom'] . ' ' . $dossier['prenom']) ?>
                         <span class="text-muted text-small">| Dossier <?= htmlspecialchars($dossier['dossier_numero']) ?></span>
                     </h5>
                 </div>
                 <div class="text-end">
-                    <span class="badge bg-success fs-6 mb-1"><?= htmlspecialchars($dossier['service_nom']) ?></span><br>
+                    <span class="badge bg-success fs-6 mb-1">
+    <?= htmlspecialchars($dossier['service_nom'] ?? 'Service non défini') ?>
+                    </span><br>
                     <span class="badge bg-secondary">Lit <?= htmlspecialchars($dossier['lit_numero']) ?></span>
                 </div>
             </div>
@@ -46,9 +79,12 @@ $dernieres = $dernieres_constantes ?? [];
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-subtitle mb-2 text-muted">Tension Artérielle</h6>
-                                <h2 class="card-title mb-0">
-                                    <?= ($dernieres['tension_sys'] ?? '-') . '/' . ($dernieres['tension_dia'] ?? '-') ?>
-                                </h2>
+                                <!-- Dans app/views/hospitalisation/suivi.php -->
+<h2 class="card-title mb-0">
+    <?= (isset($dernieres['pression_arterielle_systolique']) && $dernieres['pression_arterielle_systolique'] > 0)
+        ? $dernieres['pression_arterielle_systolique'] . '/' . $dernieres['pression_arterielle_diastolique']
+        : '--/--' ?>
+</h2>
                             </div>
                             <i class="bi bi-activity fs-1 text-info"></i>
                         </div>
@@ -67,7 +103,7 @@ $dernieres = $dernieres_constantes ?? [];
                 </div>
                 <div class="col-md-3">
                     <div class="card border-primary h-100" style="border-style: dashed;">
-                        <div class="card-body d-flex align-items-center justify-content-center cursor-pointer" 
+                        <div class="card-body d-flex align-items-center justify-content-center cursor-pointer"
                              data-bs-toggle="modal" data-bs-target="#modalAddConstante" style="cursor: pointer;">
                             <div class="text-center text-primary">
                                 <i class="bi bi-plus-circle fs-2"></i><br>
@@ -77,6 +113,22 @@ $dernieres = $dernieres_constantes ?? [];
                     </div>
                 </div>
             </div>
+
+            <div class="row mb-4 no-print">
+    <div class="col-12">
+        <div class="card p-3 shadow-sm border-0 bg-light">
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddConstante"><i class="bi bi-plus-circle"></i> Ajouter Constantes</button>
+                <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#modalAddSoin"><i class="bi bi-calendar-plus"></i> Ajouter Soin</button>
+                <!-- Dans suivi.php -->
+<a href="<?= BASE_URL ?>hospitalisation/observations-evolution/<?= htmlspecialchars($patient['id']) ?>"
+   class="btn btn-dark rounded-pill px-4">
+   <i class="bi bi-pencil-square"></i> Note d'évolution
+</a>
+            </div>
+        </div>
+    </div>
+</div>
 
             <!-- GRAPHIQUES -->
             <div class="row g-3 mb-4">
@@ -91,7 +143,7 @@ $dernieres = $dernieres_constantes ?? [];
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Graphe Tension -->
                 <div class="col-md-6">
                     <div class="card shadow-sm">
@@ -111,9 +163,11 @@ $dernieres = $dernieres_constantes ?? [];
                     <div class="card shadow-sm">
                         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
                             <h5 class="mb-0"><i class="bi bi-journal-medical"></i> Planning des Soins</h5>
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddSoin">
-                                <i class="bi bi-calendar-plus"></i> Planifier un Soin
-                            </button>
+                            <!-- Bouton dans la vue suivi.php -->
+<a href="<?= BASE_URL ?>hospitalisation/planifier-soins/<?= htmlspecialchars($dossier['patient_id'] ?? $patient['id']) ?>"
+   class="btn btn-primary btn-sm">
+    <i class="bi bi-calendar-plus"></i> Planifier un Soin
+</a>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -178,9 +232,9 @@ $dernieres = $dernieres_constantes ?? [];
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="<?= BASE_URL ?>hospitalisation/add-constantes" method="POST">
-                <input type="hidden" name="admission_id" value="<?= $dossier['id'] ?>">
-                <input type="hidden" name="patient_id" value="<?= $dossier['patient_id'] ?>">
-                
+               <input type="hidden" name="admission_id" value="<?= htmlspecialchars($dossier['id'] ?? '0') ?>">
+                <input type="hidden" name="patient_id" value="<?= htmlspecialchars($dossier['patient_id'] ?? '0') ?>">
+
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Nouvelle Prise de Constantes</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -227,7 +281,8 @@ $dernieres = $dernieres_constantes ?? [];
         <div class="modal-content">
             <form action="<?= BASE_URL ?>hospitalisation/add-soin" method="POST">
                 <input type="hidden" name="admission_id" value="<?= $dossier['id'] ?>">
-                
+                <input type="hidden" name="patient_id" value="">
+
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title">Planifier un Soin</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -261,6 +316,47 @@ $dernieres = $dernieres_constantes ?? [];
         </div>
     </div>
 </div>
+
+<!-- SCRIPT POUR LA  SURVEILLANCE AUTOMATIQUE -->
+
+<script>
+function surveillerConstantes() {
+    // Récupérer les dernières valeurs depuis les cartes HTML
+    const tempVal = parseFloat(document.querySelector('.vital-box.temp .vital-value').innerText);
+    const spo2Val = parseFloat(document.querySelector('.vital-box.spo2 .vital-value')?.innerText || 100);
+    const fcVal = parseInt(document.querySelector('.vital-box.pouls .vital-value').innerText);
+
+    // Température > 38.5 = Critique, > 38 = Warning
+    const tempBox = document.querySelector('.vital-box.temp');
+    if (tempVal > 38.5) tempBox.classList.add('vitals-critical');
+    else if (tempVal > 38) tempBox.classList.add('vitals-warning');
+
+    // SpO2 < 94 = Warning, < 90 = Critique
+    const spo2Box = document.querySelector('.vital-box.spo2');
+    if (spo2Val < 90) spo2Box.classList.add('vitals-critical');
+    else if (spo2Val < 94) spo2Box.classList.add('vitals-warning');
+
+    // Pouls > 120 = Critique, > 100 = Warning
+    const poulsBox = document.querySelector('.vital-box.pouls');
+    if (fcVal > 120) poulsBox.classList.add('vitals-critical');
+    else if (fcVal > 100) poulsBox.classList.add('vitals-warning');
+}
+
+// Lancer la surveillance dès le chargement
+document.addEventListener('DOMContentLoaded', surveillerConstantes);
+</script>
+
+<script>
+function preparerModalSoin(patientId, admissionId) {
+    // Remplir les champs cachés du formulaire de la modale
+    document.querySelector('#modalAddSoin input[name="patient_id"]').value = patientId;
+    document.querySelector('#modalAddSoin input[name="admission_id"]').value = admissionId;
+
+    // Ouvrir la modale manuellement
+    const myModal = new bootstrap.Modal(document.getElementById('modalAddSoin'));
+    myModal.show();
+}
+</script>
 
 <!-- SCRIPT POUR LES GRAPHIQUES CHART.JS -->
 <script>
@@ -328,7 +424,7 @@ new Chart(document.getElementById('chartTension'), {
 function validerSoin(id) {
     if(confirm("Confirmer la réalisation de ce soin ?")) {
         const note = prompt("Observation éventuelle (facultatif) :");
-        
+
         const formData = new FormData();
         formData.append('soin_id', id);
         formData.append('note', note);
@@ -343,6 +439,17 @@ function validerSoin(id) {
         });
     }
 }
+
+setInterval(() => {
+    fetch(window.location.href)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            // Mise à jour silencieuse des cartes de constantes
+            document.querySelector('.row.g-3').innerHTML = doc.querySelector('.row.g-3').innerHTML;
+        });
+}, 60000);
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

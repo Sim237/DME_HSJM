@@ -15,6 +15,13 @@ include __DIR__ . '/../../layouts/header.php';
             <?php
                 $numero = 7;
                 include __DIR__ . '/progress_bar.php';
+
+                if (!empty($_GET['error'])) {
+                    echo '<div class="alert alert-danger">'.htmlspecialchars($_GET['error']).'</div>';
+                }
+                if (!empty($_GET['details'])) {
+                    echo '<div class="alert alert-warning">'.htmlspecialchars($_GET['details']).'</div>';
+                }
             ?>
 
             <form action="<?= BASE_URL ?>consultation/sauvegarder" method="POST">
@@ -59,7 +66,7 @@ include __DIR__ . '/../../layouts/header.php';
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold">Motif (Optionnel)</label>
-                                    <input type="text" class="form-control" placeholder="Ex: Contrôle cicatrisation">
+                                    <input type="text" class="form-control" name="motif_suivi" placeholder="Ex: Contrôle cicatrisation" value="<?php echo htmlspecialchars($consultation['motif_suivi'] ?? ''); ?>">
                                 </div>
                             </div>
                         </div>
