@@ -9,12 +9,14 @@ if (!function_exists('getInitials')) {
 }
 
 // Sécurisation des données patient
-$patient       = $patient       ?? [];
-$parametres    = $parametres    ?? null;
-$consultations = $consultations ?? [];
-$bilans        = $bilans        ?? [];
-$history       = $history       ?? [];
+$patient        = $patient        ?? [];
+$parametres     = $parametres     ?? null;
+$consultations  = $consultations  ?? [];
+$bilans         = $bilans         ?? [];
+$history        = $history        ?? [];
 $comptes_rendus = $comptes_rendus ?? [];
+$prescriptions  = $prescriptions  ?? [];
+$bilans_demandes = $bilans_demandes ?? [];
 
 // Calcul de l'âge
 $age = 'N/A';
@@ -166,10 +168,25 @@ if (!empty($patient['date_naissance'])) {
             <ul class="nav nav-tabs" id="myTab" role="tablist">
                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-consultations" type="button"><i class="bi bi-journal-text me-2"></i>Consultations</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-antecedents" type="button"><i class="bi bi-clock-history me-2"></i>Antécédents</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bilans" type="button"><i class="bi bi-flask me-2"></i>Derniers Bilans</button></li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-prescriptions" type="button">
+                        <i class="bi bi-capsule me-2"></i>Médicaments
+                        <?php if (!empty($prescriptions)): ?>
+                            <span class="badge bg-warning text-dark rounded-pill ms-1"><?= count($prescriptions) ?></span>
+                        <?php endif; ?>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bilans-demandes" type="button">
+                        <i class="bi bi-flask me-2"></i>Bilans
+                        <?php if (!empty($bilans_demandes)): ?>
+                            <span class="badge bg-info text-white rounded-pill ms-1"><?= count($bilans_demandes) ?></span>
+                        <?php endif; ?>
+                    </button>
+                </li>
                 <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documents" type="button">
-                        <i class="bi bi-file-earmark-medical me-2"></i>Mes Documents
+                        <i class="bi bi-file-earmark-medical me-2"></i>Documents
                         <?php if (!empty($comptes_rendus)): ?>
                             <span class="badge bg-primary rounded-pill ms-1"><?= count($comptes_rendus) ?></span>
                         <?php endif; ?>
@@ -211,6 +228,161 @@ if (!empty($patient['date_naissance'])) {
                         <h6 class="fw-bold text-primary"><i class="bi bi-info-circle-fill"></i> Antécédents Médicaux</h6>
                         <p class="mb-0 small"><?= nl2br(htmlspecialchars($patient['antecedents_medicaux'] ?: 'Aucun')) ?></p>
                     </div>
+                </div>
+
+                <!-- CONTENU MÉDICAMENTS PRESCRITS -->
+                <div class="tab-pane fade" id="tab-prescriptions">
+                    <?php if (!empty($prescriptions)):
+                        // Grouper par ordonnance
+                        $grouped = [];
+                        foreach ($prescriptions as $p) {
+                            $key = $p['prescription_id'];
+                            if (!isset($grouped[$key])) {
+                                $grouped[$key] = [
+                                    'date'     => $p['date_prescription'],
+                                    'numero'   => $p['numero_ordonnance'],
+                                    'statut'   => $p['statut_prescription'],
+                                    'medecin'  => $p['medecin_nom'],
+                                    'lignes'   => []
+                                ];
+                            }
+                            $grouped[$key]['lignes'][] = $p;
+                        }
+                    ?>
+                        <?php foreach ($grouped as $pres): ?>
+                            <div class="card mb-3 border-0 shadow-sm border-start border-warning border-4">
+                                <div class="card-body pb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="fw-bold text-warning"><i class="bi bi-receipt me-1"></i>Ordonnance</span>
+                                            <small class="text-muted ms-2"><?= htmlspecialchars($pres['numero'] ?? '') ?></small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-light text-dark border"><?= date('d/m/Y', strtotime($pres['date'])) ?></span>
+                                            <?php
+                                                $sc = match($pres['statut'] ?? '') {
+                                                    'EN_ATTENTE'  => 'bg-warning text-dark',
+                                                    'PARTIEL'     => 'bg-info text-white',
+                                                    'SERVIE'      => 'bg-success',
+                                                    'ANNULEE'     => 'bg-danger',
+                                                    default       => 'bg-secondary',
+                                                };
+                                            ?>
+                                            <span class="badge <?= $sc ?> ms-1"><?= $pres['statut'] ?? '—' ?></span>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mb-2">Dr. <?= htmlspecialchars($pres['medecin'] ?? '') ?></small>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="bg-light">
+                                                <tr class="small text-muted text-uppercase">
+                                                    <th>Médicament</th>
+                                                    <th>Posologie</th>
+                                                    <th>Voie</th>
+                                                    <th>Fréquence</th>
+                                                    <th>Durée</th>
+                                                    <th>Qté</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($pres['lignes'] as $l): ?>
+                                                    <tr>
+                                                        <td class="fw-bold"><?= htmlspecialchars($l['medicament_nom']) ?>
+                                                            <small class="text-muted d-block"><?= htmlspecialchars($l['forme'] . ' ' . $l['dosage']) ?></small>
+                                                        </td>
+                                                        <td><small><?= htmlspecialchars($l['posologie'] ?? '—') ?></small></td>
+                                                        <td><small><?= htmlspecialchars($l['voie'] ?? '—') ?></small></td>
+                                                        <td><small><?= htmlspecialchars($l['frequence'] ?? '—') ?></small></td>
+                                                        <td><small><?= htmlspecialchars($l['duree'] ?? '—') ?></small></td>
+                                                        <td><small><?= $l['quantite'] ?? '—' ?></small></td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-capsule fs-1 d-block mb-2 opacity-25"></i>
+                            Aucune prescription enregistrée.
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- CONTENU BILANS DEMANDÉS + RÉSULTATS -->
+                <div class="tab-pane fade" id="tab-bilans-demandes">
+                    <?php if (!empty($bilans_demandes)): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border-0">
+                                <thead class="bg-light">
+                                    <tr class="small text-uppercase text-muted">
+                                        <th>Examen</th>
+                                        <th>Demandé le</th>
+                                        <th>Médecin</th>
+                                        <th class="text-center">Statut</th>
+                                        <th>Résultat</th>
+                                        <th class="text-center">Interprétation</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($bilans_demandes as $b):
+                                        $hasResult = !empty($b['date_resultat']);
+                                        $isAnormal  = ($hasResult && $b['anormal'] == 1);
+                                    ?>
+                                        <tr class="<?= $isAnormal ? 'table-danger bg-opacity-10' : '' ?>">
+                                            <td>
+                                                <div class="fw-bold"><?= htmlspecialchars($b['nom_examen'] ?? 'Examen') ?></div>
+                                                <small class="text-muted"><?= htmlspecialchars($b['categorie'] ?? '') ?></small>
+                                            </td>
+                                            <td><small><?= date('d/m/Y', strtotime($b['date_creation'])) ?></small></td>
+                                            <td><small>Dr. <?= htmlspecialchars($b['medecin_nom'] . ' ' . $b['medecin_prenom']) ?></small></td>
+                                            <td class="text-center">
+                                                <?php
+                                                    $statuts = [
+                                                        'EN_ATTENTE'            => ['bg-warning text-dark', 'En attente'],
+                                                        'PRELEVEMENTS_EFFECTUES'=> ['bg-info text-white',   'Prélevé'],
+                                                        'EN_ANALYSE'            => ['bg-primary',            'En analyse'],
+                                                        'RESULTATS_PRETS'       => ['bg-success',            'Résultat prêt'],
+                                                        'VALIDES'               => ['bg-success',            'Validé'],
+                                                    ];
+                                                    [$scls, $stxt] = $statuts[$b['statut']] ?? ['bg-secondary', $b['statut']];
+                                                ?>
+                                                <span class="badge rounded-pill <?= $scls ?>"><?= $stxt ?></span>
+                                            </td>
+                                            <td>
+                                                <?php if ($hasResult && $b['valeur_numerique'] !== null): ?>
+                                                    <span class="fs-6 fw-bold <?= $isAnormal ? 'text-danger' : 'text-success' ?>">
+                                                        <?= $b['valeur_numerique'] ?> <small><?= htmlspecialchars($b['unite'] ?? '') ?></small>
+                                                    </span>
+                                                    <br><small class="text-muted">Norme : <?= $b['valeur_normale_min'] ?>–<?= $b['valeur_normale_max'] ?></small>
+                                                <?php elseif ($hasResult && !empty($b['resultat'])): ?>
+                                                    <small><?= htmlspecialchars(substr($b['resultat'], 0, 80)) ?></small>
+                                                <?php else: ?>
+                                                    <small class="text-muted">—</small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if ($hasResult): ?>
+                                                    <span class="badge rounded-pill bg-<?= $isAnormal ? 'danger' : 'success' ?>">
+                                                        <?= $isAnormal ? 'ANORMAL' : 'NORMAL' ?>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <small class="text-muted">En attente</small>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-flask fs-1 d-block mb-2 opacity-25"></i>
+                            Aucun bilan demandé pour ce patient.
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- CONTENU MES DOCUMENTS -->

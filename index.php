@@ -117,6 +117,11 @@ switch(true) {
         (new PatientController())->uploadDocument();
         break;
 
+    case ($request == 'patients/mes-patients'):
+        require_once 'app/controllers/PatientController.php';
+        (new PatientController())->mesPatients();
+        break;
+
     /* ============================================================
        4. MODULE URGENCES (SAU) - COCKPIT DÉDIÉ
        ============================================================ */

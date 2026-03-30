@@ -181,12 +181,20 @@ class PatientController extends UnifiedController {
             exit();
         }
 
-        // 2. Sécurité : Vérification du cloisonnement par service (Sauf pour l'ADMIN)
+        // 2. Sécurité : cloisonnement par service — autorise aussi l'accès aux patients
+        //    qui ont été hospitalisés dans le service (y compris les sortis)
         if ($_SESSION['user_role'] !== 'ADMIN') {
-            if ($patient['service_id'] != $_SESSION['service_id']) {
-                // Log de la tentative d'accès non autorisé
-                $this->audit->logAction('READ', 'patients', $id, null, "ACCÈS REFUSÉ : Tentative de consultation hors service");
-                die("Accès Interdit : Vous n'êtes pas autorisé à consulter un patient d'un autre service.");
+            $canAccess = ($patient['service_id'] == $_SESSION['service_id']);
+            if (!$canAccess) {
+                $stmtAccess = $this->db->prepare(
+                    "SELECT COUNT(*) FROM hospitalisations WHERE patient_id = ? AND service_id = ?"
+                );
+                $stmtAccess->execute([$id, $_SESSION['service_id']]);
+                $canAccess = ($stmtAccess->fetchColumn() > 0);
+            }
+            if (!$canAccess) {
+                $this->audit->logAction('READ', 'patients', $id, null, "ACCÈS REFUSÉ : hors service");
+                die("Accès Interdit : Ce patient n'appartient pas à votre service.");
             }
         }
 
@@ -268,8 +276,109 @@ $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
         $stmtCRH->execute([$id]);
         $comptes_rendus = $stmtCRH->fetchAll(PDO::FETCH_ASSOC);
 
-        // 8. Chargement de la vue avec toutes les variables préparées
+        // 8. Prescriptions médicaments (toutes consultations du patient)
+        $prescriptions = [];
+        try {
+            $stmtPres = $this->db->prepare("
+                SELECT p.id as prescription_id, p.date_prescription, p.statut as statut_prescription,
+                       p.numero_ordonnance,
+                       lp.posologie, lp.duree, lp.frequence, lp.quantite, lp.voie,
+                       m.nom as medicament_nom, m.forme, m.dosage,
+                       u.nom as medecin_nom
+                FROM prescriptions p
+                JOIN lignes_prescription lp ON p.id = lp.prescription_id
+                JOIN medicaments m ON lp.medicament_id = m.id
+                LEFT JOIN users u ON p.medecin_id = u.id
+                WHERE p.patient_id = ?
+                ORDER BY p.date_prescription DESC
+            ");
+            $stmtPres->execute([$id]);
+            $prescriptions = $stmtPres->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { error_log("prescriptions dossier: " . $e->getMessage()); }
+
+        // 9. Bilans demandés (avec statut, incluant résultats s'ils existent)
+        $bilans_demandes = [];
+        try {
+            $stmtBD = $this->db->prepare("
+                SELECT dl.id, dl.statut, dl.date_creation, dl.urgence,
+                       el.nom as nom_examen, el.categorie,
+                       u.nom as medecin_nom, u.prenom as medecin_prenom,
+                       prl.valeur_numerique, prl.unite, prl.anormal,
+                       prl.valeur_normale_min, prl.valeur_normale_max,
+                       prl.resultat, prl.date_resultat
+                FROM demandes_laboratoire dl
+                JOIN consultations c ON dl.consultation_id = c.id
+                LEFT JOIN examens_laboratoire el ON dl.examen_id = el.id
+                LEFT JOIN users u ON c.medecin_id = u.id
+                LEFT JOIN patient_resultats_labo prl
+                       ON prl.demande_id = dl.id AND prl.patient_id = c.patient_id
+                WHERE c.patient_id = ?
+                ORDER BY dl.date_creation DESC
+            ");
+            $stmtBD->execute([$id]);
+            $bilans_demandes = $stmtBD->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { error_log("bilans_demandes dossier: " . $e->getMessage()); }
+
+        // 10. Chargement de la vue avec toutes les variables préparées
         require_once __DIR__ . '/../views/patients/dossier.php';
+    }
+
+    /**
+     * Page dédiée : liste de tous les patients du service avec recherche dynamique
+     */
+    public function mesPatients() {
+        $serviceId = $_SESSION['service_id'];
+        $search    = trim($_GET['q'] ?? '');
+        $page      = max(1, (int)($_GET['page'] ?? 1));
+        $limit     = 20;
+        $offset    = ($page - 1) * $limit;
+
+        $params = [':sid' => $serviceId, ':sid2' => $serviceId];
+        $whereSearch = '';
+        if ($search !== '') {
+            $whereSearch = " AND (p.nom LIKE :q OR p.prenom LIKE :q OR p.dossier_numero LIKE :q)";
+            $params[':q'] = "%$search%";
+        }
+
+        $sql = "
+            SELECT DISTINCT p.id, p.nom, p.prenom, p.dossier_numero, p.statut, p.date_naissance,
+                h.id as hosp_id, h.statut as statut_hosp, h.date_admission, h.date_sortie_effective
+            FROM patients p
+            LEFT JOIN hospitalisations h ON h.id = (
+                SELECT MAX(h2.id) FROM hospitalisations h2 WHERE h2.patient_id = p.id
+            )
+            WHERE (p.service_id = :sid
+               OR EXISTS (SELECT 1 FROM hospitalisations hx WHERE hx.patient_id = p.id AND hx.service_id = :sid2))
+            $whereSearch
+            ORDER BY p.nom ASC
+            LIMIT $limit OFFSET $offset
+        ";
+        $stmtP = $this->db->prepare($sql);
+        $stmtP->execute($params);
+        $patients_liste = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+
+        // Total pour la pagination
+        $sqlCount = "
+            SELECT COUNT(DISTINCT p.id)
+            FROM patients p
+            LEFT JOIN hospitalisations h ON h.patient_id = p.id
+            WHERE (p.service_id = :sid
+               OR h.service_id = :sid2)
+            $whereSearch
+        ";
+        $stmtCount = $this->db->prepare($sqlCount);
+        $stmtCount->execute($params);
+        $total = (int)$stmtCount->fetchColumn();
+        $total_pages = ceil($total / $limit);
+
+        // Réponse JSON pour la recherche AJAX
+        if (!empty($_GET['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['patients' => $patients_liste, 'total' => $total]);
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/patients/mes_patients.php';
     }
 
     /**

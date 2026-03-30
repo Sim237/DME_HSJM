@@ -305,7 +305,27 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
         $stmtT->execute([$userId]);
         $mes_taches = $stmtT->fetchAll(PDO::FETCH_ASSOC);
 
-        // 8. PATIENTS LIBÉRÉS SANS COMPTE-RENDU D'HOSPITALISATION (CRH à rédiger)
+        // 8. MES PATIENTS DU SERVICE (actifs + sortis, limité à 6 pour le widget)
+        $mes_patients_service = [];
+        try {
+            $stmtMP = $db->prepare("
+                SELECT DISTINCT p.id, p.nom, p.prenom, p.dossier_numero, p.statut,
+                    h.id as hosp_id, h.statut as statut_hosp,
+                    h.date_sortie_effective
+                FROM patients p
+                LEFT JOIN hospitalisations h ON h.id = (
+                    SELECT MAX(h2.id) FROM hospitalisations h2 WHERE h2.patient_id = p.id
+                )
+                WHERE p.service_id = :sid
+                   OR EXISTS (SELECT 1 FROM hospitalisations hx WHERE hx.patient_id = p.id AND hx.service_id = :sid2)
+                ORDER BY p.id DESC
+                LIMIT 6
+            ");
+            $stmtMP->execute([':sid' => $serviceId, ':sid2' => $serviceId]);
+            $mes_patients_service = $stmtMP->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { error_log("mes_patients: " . $e->getMessage()); }
+
+        // 9. PATIENTS LIBÉRÉS SANS COMPTE-RENDU D'HOSPITALISATION (CRH à rédiger)
         $crh_en_attente = [];
         $stmtCRH = $db->prepare("
             SELECT p.id, p.nom, p.prenom, p.dossier_numero,

@@ -191,7 +191,82 @@
                 </div>
             </div>
 
-            <!-- ================= SECTION PATIENTS HOSPITALISÉS ================= -->
+            <!-- ================= SECTION MES PATIENTS DU SERVICE ================= -->
+<div class="med-card">
+    <div class="card-header-custom">
+        <h5 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-people-fill me-2 text-primary"></i>Mes Patients du Service
+        </h5>
+        <a href="<?= BASE_URL ?>patients/mes-patients" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-arrow-right me-1"></i>Voir plus
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>Statut</th>
+                    <th>Dernière hospitalisation</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if(!empty($mes_patients_service)): foreach($mes_patients_service as $mp):
+                    $sortieDate = $mp['date_sortie_effective'] ? date('d/m/Y', strtotime($mp['date_sortie_effective'])) : null;
+                    $isHospEnCours = ($mp['statut_hosp'] === 'en_cours');
+                    $isSorti = ($mp['statut'] === 'SORTIE' || $mp['statut_hosp'] === 'termine');
+                    // Badge couleur selon statut
+                    if ($isHospEnCours) { $badgeCls = 'bg-primary'; $badgeTxt = 'Hospitalisé'; }
+                    elseif ($isSorti)   { $badgeCls = 'bg-secondary'; $badgeTxt = 'Sorti'; }
+                    else                { $badgeCls = 'bg-success'; $badgeTxt = 'Externe'; }
+                ?>
+                    <tr>
+                        <td>
+                            <div class="fw-bold"><?= strtoupper($mp['nom']) ?> <?= $mp['prenom'] ?></div>
+                            <small class="text-muted"><?= $mp['dossier_numero'] ?></small>
+                        </td>
+                        <td>
+                            <span class="status-badge <?= $isHospEnCours ? 'status-waiting' : 'status-ready' ?>">
+                                <?= $badgeTxt ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php if ($sortieDate): ?>
+                                <small class="text-muted">Sorti le <?= $sortieDate ?></small>
+                            <?php elseif ($isHospEnCours): ?>
+                                <small class="text-success fw-bold">En cours</small>
+                            <?php else: ?>
+                                <small class="text-muted">—</small>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-end">
+                            <a href="<?= BASE_URL ?>patients/dossier/<?= $mp['id'] ?>"
+                               class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1">
+                                <i class="bi bi-folder2-open me-1"></i>Dossier
+                            </a>
+                            <?php if ($mp['hosp_id'] && $isSorti): ?>
+                                <a href="<?= BASE_URL ?>formulaire/crh/<?= $mp['hosp_id'] ?>"
+                                   class="btn btn-sm btn-outline-danger rounded-pill px-2">
+                                    <i class="bi bi-pencil-square me-1"></i>CRH
+                                </a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; else: ?>
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted small">
+                            <i class="bi bi-person-x d-block mb-2 fs-3 opacity-25"></i>
+                            Aucun patient dans votre service.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= SECTION PATIENTS HOSPITALISÉS ================= -->
 <div class="med-card">
     <div class="card-header-custom">
         <h5 class="mb-0 fw-bold text-primary">
