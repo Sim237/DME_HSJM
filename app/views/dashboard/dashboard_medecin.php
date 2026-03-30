@@ -70,6 +70,10 @@
 
     .btn-hosp-pulse { animation: pulse-orange 2s infinite; background-color: var(--med-warning) !important; color: white; border: none; font-weight: bold; }
     @keyframes pulse-orange { 0% { box-shadow: 0 0 0 0 rgba(253, 126, 20, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(253, 126, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(253, 126, 20, 0); } }
+
+    /* Badge CRH urgence */
+    .crh-badge { animation: pulse-crh 2s infinite; }
+    @keyframes pulse-crh { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
 </style>
 
 <!-- TOPBAR -->
@@ -252,6 +256,50 @@
         </table>
     </div>
 </div>
+
+<!-- ================= SECTION CRH À RÉDIGER ================= -->
+<?php if (!empty($crh_en_attente)): ?>
+<div class="med-card border-danger border-2">
+    <div class="card-header-custom" style="background: #fff5f5;">
+        <h5 class="mb-0 fw-bold text-danger">
+            <i class="bi bi-file-earmark-medical me-2"></i>Comptes-rendus d'hospitalisation à rédiger
+        </h5>
+        <span class="badge bg-danger rounded-pill crh-badge"><?= count($crh_en_attente) ?> en attente</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>Admis le</th>
+                    <th>Sorti le</th>
+                    <th>Motif</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($crh_en_attente as $crh): ?>
+                    <tr>
+                        <td>
+                            <strong><?= strtoupper($crh['nom']) ?> <?= $crh['prenom'] ?></strong><br>
+                            <small class="text-muted"><?= $crh['dossier_numero'] ?></small>
+                        </td>
+                        <td><small><?= date('d/m/Y', strtotime($crh['date_admission'])) ?></small></td>
+                        <td><small class="text-danger fw-bold"><?= date('d/m/Y', strtotime($crh['date_sortie_effective'])) ?></small></td>
+                        <td><small class="text-muted"><?= htmlspecialchars(substr($crh['motif_hospitalisation'] ?? '—', 0, 50)) ?></small></td>
+                        <td class="text-end">
+                            <a href="<?= BASE_URL ?>formulaire/crh/<?= $crh['hosp_id'] ?>"
+                               class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">
+                                <i class="bi bi-pencil-square me-1"></i> Rédiger CRH
+                            </a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="med-card">
     <div class="card-header-custom">

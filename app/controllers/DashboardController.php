@@ -305,6 +305,23 @@ $lits_global = $db->query($sqlGlobal)->fetchAll(PDO::FETCH_ASSOC);
         $stmtT->execute([$userId]);
         $mes_taches = $stmtT->fetchAll(PDO::FETCH_ASSOC);
 
+        // 8. PATIENTS LIBÉRÉS SANS COMPTE-RENDU D'HOSPITALISATION (CRH à rédiger)
+        $crh_en_attente = [];
+        $stmtCRH = $db->prepare("
+            SELECT p.id, p.nom, p.prenom, p.dossier_numero,
+                   h.id as hosp_id, h.date_admission, h.date_sortie_effective, h.motif_hospitalisation
+            FROM hospitalisations h
+            JOIN patients p ON h.patient_id = p.id
+            LEFT JOIN comptes_rendus_hosp crh ON h.id = crh.hospitalisation_id
+            WHERE h.medecin_responsable = ?
+              AND h.statut = 'termine'
+              AND crh.id IS NULL
+            ORDER BY h.date_sortie_effective DESC
+            LIMIT 10
+        ");
+        $stmtCRH->execute([$userId]);
+        $crh_en_attente = $stmtCRH->fetchAll(PDO::FETCH_ASSOC);
+
        // 2. RÉCUPÉRATION DU SUIVI DES BILANS (Labo + Radio)
         // Cette requête récupère les demandes qui n'ont pas encore été validées/lues
         $sqlSuivi = "

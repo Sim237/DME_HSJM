@@ -402,6 +402,24 @@ case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
         (new FormulaireController())->creer($matches[1], $matches[2]);
         break;
 
+    // CRH : formulaire depuis l'ID d'hospitalisation
+    case (preg_match('/formulaire\/crh\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/FormulaireController.php';
+        (new FormulaireController())->crh($matches[1]);
+        break;
+
+    // CRH : sauvegarde
+    case ($request == 'formulaire/sauvegarder-crh'):
+        require_once 'app/controllers/FormulaireController.php';
+        (new FormulaireController())->sauvegarderCRH();
+        break;
+
+    // CRH : consultation / impression
+    case (preg_match('/formulaire\/voir-crh\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/FormulaireController.php';
+        (new FormulaireController())->voirCRH($matches[1]);
+        break;
+
     case ($request == 'profil'):
         require_once 'app/controllers/UserController.php';
         (new UserController())->profil();

@@ -9,11 +9,12 @@ if (!function_exists('getInitials')) {
 }
 
 // Sécurisation des données patient
-$patient = $patient ?? [];
-$parametres = $parametres ?? null;
+$patient       = $patient       ?? [];
+$parametres    = $parametres    ?? null;
 $consultations = $consultations ?? [];
-$bilans = $bilans ?? []; // Résultats de laboratoire
-$history = $history ?? []; // Historique des soins infirmiers
+$bilans        = $bilans        ?? [];
+$history       = $history       ?? [];
+$comptes_rendus = $comptes_rendus ?? [];
 
 // Calcul de l'âge
 $age = 'N/A';
@@ -166,6 +167,14 @@ if (!empty($patient['date_naissance'])) {
                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-consultations" type="button"><i class="bi bi-journal-text me-2"></i>Consultations</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-antecedents" type="button"><i class="bi bi-clock-history me-2"></i>Antécédents</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bilans" type="button"><i class="bi bi-flask me-2"></i>Derniers Bilans</button></li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documents" type="button">
+                        <i class="bi bi-file-earmark-medical me-2"></i>Mes Documents
+                        <?php if (!empty($comptes_rendus)): ?>
+                            <span class="badge bg-primary rounded-pill ms-1"><?= count($comptes_rendus) ?></span>
+                        <?php endif; ?>
+                    </button>
+                </li>
             </ul>
 
             <div class="tab-content" id="myTabContent">
@@ -202,6 +211,73 @@ if (!empty($patient['date_naissance'])) {
                         <h6 class="fw-bold text-primary"><i class="bi bi-info-circle-fill"></i> Antécédents Médicaux</h6>
                         <p class="mb-0 small"><?= nl2br(htmlspecialchars($patient['antecedents_medicaux'] ?: 'Aucun')) ?></p>
                     </div>
+                </div>
+
+                <!-- CONTENU MES DOCUMENTS -->
+                <div class="tab-pane fade" id="tab-documents">
+                    <?php if (!empty($comptes_rendus)): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border-0">
+                                <thead class="bg-light">
+                                    <tr class="small text-uppercase text-muted">
+                                        <th>Type de document</th>
+                                        <th>Date d'entrée</th>
+                                        <th>Date de sortie</th>
+                                        <th>Médecin</th>
+                                        <th class="text-center">Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($comptes_rendus as $crh): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-2">
+                                                        <i class="bi bi-file-earmark-text"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold">Compte-rendu d'hospitalisation</div>
+                                                        <small class="text-muted">Créé le <?= date('d/m/Y', strtotime($crh['created_at'])) ?></small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><small><?= $crh['date_entree'] ? date('d/m/Y', strtotime($crh['date_entree'])) : '—' ?></small></td>
+                                            <td><small><?= $crh['date_sortie'] ? date('d/m/Y', strtotime($crh['date_sortie'])) : '—' ?></small></td>
+                                            <td><small>Dr. <?= htmlspecialchars($crh['medecin_nom'] . ' ' . $crh['medecin_prenom']) ?></small></td>
+                                            <td class="text-center">
+                                                <?php if ($crh['signe']): ?>
+                                                    <span class="badge rounded-pill bg-success">
+                                                        <i class="bi bi-patch-check-fill me-1"></i>Signé
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge rounded-pill bg-warning text-dark">Non signé</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="<?= BASE_URL ?>formulaire/voir-crh/<?= $crh['id'] ?>"
+                                                   class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1"
+                                                   target="_blank">
+                                                    <i class="bi bi-eye me-1"></i>Consulter
+                                                </a>
+                                                <a href="<?= BASE_URL ?>formulaire/voir-crh/<?= $crh['id'] ?>"
+                                                   class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                                   onclick="setTimeout(() => window.print(), 500); return false;"
+                                                   target="_blank">
+                                                    <i class="bi bi-printer me-1"></i>Imprimer
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-x fs-1 d-block mb-2 opacity-25"></i>
+                            Aucun document disponible pour ce patient.
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- CONTENU BILANS -->

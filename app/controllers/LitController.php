@@ -83,12 +83,25 @@ class LitController extends UnifiedController {
             // 2. On marque le patient comme SORTI
             $db->prepare("UPDATE patients SET statut = 'SORTIE' WHERE id = ?")->execute([$patient_id]);
 
-            // 3. Log du mouvement
+            // 3. Clôturer l'hospitalisation en cours
+            $db->prepare("UPDATE hospitalisations SET statut = 'termine', date_sortie_effective = NOW() WHERE patient_id = ? AND statut = 'en_cours'")
+               ->execute([$patient_id]);
+
+            // Récupérer l'id de l'hospitalisation clôturée pour l'envoyer au frontend
+            $stmtH = $db->prepare("SELECT id, medecin_responsable FROM hospitalisations WHERE patient_id = ? AND statut = 'termine' ORDER BY date_sortie_effective DESC LIMIT 1");
+            $stmtH->execute([$patient_id]);
+            $hosp = $stmtH->fetch(PDO::FETCH_ASSOC);
+
+            // 4. Log du mouvement
             $db->prepare("INSERT INTO mouvements_lits (patient_id, lit_id, type_mouvement, user_id) VALUES (?, ?, 'SORTIE', ?)")
                ->execute([$patient_id, $lit_id, $_SESSION['user_id']]);
 
             $db->commit();
-            echo json_encode(['success' => true]);
+            echo json_encode([
+                'success'           => true,
+                'hospitalisation_id' => $hosp['id'] ?? null,
+                'patient_id'        => $patient_id,
+            ]);
         } catch (Exception $e) { $db->rollBack(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
         exit;
     }

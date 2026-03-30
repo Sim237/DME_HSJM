@@ -256,7 +256,19 @@ $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
 
         //var_dump($parametres); die();
 
-        // 7. Chargement de la vue avec toutes les variables préparées
+        // 7. Comptes-rendus d'hospitalisation (Mes Documents)
+        $stmtCRH = $this->db->prepare("
+            SELECT crh.id, crh.date_entree, crh.date_sortie, crh.signe, crh.created_at,
+                   u.nom as medecin_nom, u.prenom as medecin_prenom
+            FROM comptes_rendus_hosp crh
+            JOIN users u ON crh.medecin_id = u.id
+            WHERE crh.patient_id = ?
+            ORDER BY crh.created_at DESC
+        ");
+        $stmtCRH->execute([$id]);
+        $comptes_rendus = $stmtCRH->fetchAll(PDO::FETCH_ASSOC);
+
+        // 8. Chargement de la vue avec toutes les variables préparées
         require_once __DIR__ . '/../views/patients/dossier.php';
     }
 
