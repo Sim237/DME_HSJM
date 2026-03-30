@@ -217,7 +217,7 @@ $lits_global = $lits_global ?? [];
                    class="btn btn-sm btn-info text-white rounded-pill">
                    <i class="bi bi-speedometer2"></i> Paramètres
                 </a>
-                            <button class="btn btn-link btn-sm text-muted text-decoration-none" onclick="libererLit(<?= $l['id'] ?>, '<?= addslashes($nomPatient) ?>')">
+                            <button class="btn btn-link btn-sm text-muted text-decoration-none" onclick="libererLit(<?= $l['id'] ?>, <?= (int)($l['patient_id_reel'] ?? $l['patient_id']) ?>, '<?= addslashes($nomPatient) ?>')">
                                 <small>Libérer le lit</small>
                             </button>
                         <?php else: ?>
@@ -309,16 +309,18 @@ $lits_global = $lits_global ?? [];
     }
 
     // 3. ACTION LIBÉRER UN LIT (DÉCHARGE)
-    function libererLit(litId, name) {
+    function libererLit(litId, patientId, name) {
         if(confirm("Libérer le lit de " + name + " ? Le patient sera marqué comme sorti du service.")) {
             const fd = new FormData();
             fd.append('lit_id', litId);
+            fd.append('patient_id', patientId);
             fetch('<?= BASE_URL ?>lits/decharger', { method: 'POST', body: fd })
             .then(res => res.json())
             .then(data => {
                 if(data.success) location.reload();
-                else alert("Erreur : " + data.message);
-            });
+                else alert("Erreur : " + (data.message || 'Erreur inconnue'));
+            })
+            .catch(() => alert("Erreur de communication avec le serveur."));
         }
     }
 
