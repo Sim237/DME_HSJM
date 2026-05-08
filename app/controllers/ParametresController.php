@@ -28,9 +28,20 @@ class ParametresController extends UnifiedController {
         // Logique de répartition : Bureau 1 = Pairs, Bureau 2 = Impairs
         $filtreLogic = ($bureauId == 1) ? " (numero_ordre % 2 = 0) " : " (numero_ordre % 2 <> 0) ";
 
-        // 3. Récupération des patients en attente de paramètres
+        // 3. Nettoyage automatique : patients restés en PARAMETRES depuis un jour précédent → SORTI
+        $db->prepare("
+            UPDATE patients
+            SET statut_parcours = 'SORTI'
+            WHERE statut_parcours = 'PARAMETRES'
+              AND date_mise_en_parametres IS NOT NULL
+              AND DATE(date_mise_en_parametres) < CURDATE()
+        ")->execute();
+
+        // 4. Récupération des patients en attente de paramètres (aujourd'hui uniquement)
         $sqlAttente = "SELECT * FROM patients
                        WHERE statut_parcours = 'PARAMETRES'
+                       AND DATE(date_mise_en_parametres) = CURDATE()
+                       AND (circuit = 'STANDARD' OR circuit IS NULL)
                        AND $filtreLogic
                        ORDER BY numero_ordre ASC";
 

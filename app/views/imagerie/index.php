@@ -1,10 +1,5 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
-<!-- LIENS EXTERNES POUR LES ICÔNES ET LE DYNAMISME -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-
 <style>
     /* 1. CONFIGURATION COCKPIT (SANS SIDEBAR) */
     .sidebar { display: none !important; }

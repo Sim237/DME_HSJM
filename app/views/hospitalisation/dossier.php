@@ -264,7 +264,7 @@
     </div>
 </div>
 
-<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+<!--<script src="<?= BASE_URL ?>public/js/chart.umd.min.js"></script>-->
 <script>
 function administrer(prescriptionId) {
     const dose = prompt('Dose administrée:');

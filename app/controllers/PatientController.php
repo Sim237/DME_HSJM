@@ -130,6 +130,61 @@ class PatientController extends UnifiedController {
     }
 
     /**
+     * AJAX — Enregistre les constantes vitales depuis le modal du dossier patient
+     */
+    public function saveConstantes() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+            return;
+        }
+
+        $patient_id = (int)($_POST['patient_id'] ?? 0);
+        if (!$patient_id) {
+            echo json_encode(['success' => false, 'message' => 'Patient manquant']);
+            return;
+        }
+
+        $temp   = !empty($_POST['temperature'])        ? (float)$_POST['temperature']        : null;
+        $sys    = !empty($_POST['tension_sys'])        ? (int)$_POST['tension_sys']           : null;
+        $dia    = !empty($_POST['tension_dia'])        ? (int)$_POST['tension_dia']           : null;
+        $pouls  = !empty($_POST['frequence_cardiaque']) ? (int)$_POST['frequence_cardiaque'] : null;
+        $spo2   = !empty($_POST['spo2'])               ? (int)$_POST['spo2']                 : null;
+        $poids  = !empty($_POST['poids'])              ? (float)$_POST['poids']              : null;
+        $taille = !empty($_POST['taille'])             ? (int)$_POST['taille']               : null;
+
+        try {
+            $db = (new Database())->getConnection();
+            $db->prepare("
+                INSERT INTO patient_parametres (
+                    patient_id, user_id, temperature,
+                    pression_arterielle_systolique, pression_arterielle_diastolique,
+                    frequence_cardiaque, poids, taille, saturation_oxygene, date_mesure
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ")->execute([
+                $patient_id, $_SESSION['user_id'] ?? 0,
+                $temp, $sys, $dia, $pouls, $poids, $taille, $spo2
+            ]);
+
+            echo json_encode([
+                'success' => true,
+                'data'    => [
+                    'temperature' => $temp,
+                    'poids'       => $poids,
+                    'pouls'       => $pouls,
+                    'sys'         => $sys,
+                    'dia'         => $dia,
+                    'spo2'        => $spo2,
+                ]
+            ]);
+        } catch (Exception $e) {
+            error_log("saveConstantes: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Erreur base de données']);
+        }
+    }
+
+    /**
      * Sauvegarde des paramètres vitaux (Prise de constantes)
      */
     public function saveMesures() {
@@ -181,10 +236,21 @@ class PatientController extends UnifiedController {
             exit();
         }
 
-        // 2. Sécurité : cloisonnement par service — autorise aussi l'accès aux patients
-        //    qui ont été hospitalisés dans le service (y compris les sortis)
+        // 2. Sécurité : cloisonnement par service — les médecins et urgentistes peuvent
+        //    accéder aux patients en cours de consultation ou d'urgence chez eux.
         if ($_SESSION['user_role'] !== 'ADMIN') {
             $canAccess = ($patient['service_id'] == $_SESSION['service_id']);
+
+            // Médecin ayant une consultation active ou récente pour ce patient
+            if (!$canAccess && in_array($_SESSION['user_role'], ['MEDECIN', 'MEDECIN_URGENCES'])) {
+                $stmtConsult = $this->db->prepare(
+                    "SELECT COUNT(*) FROM consultations WHERE patient_id = ? AND medecin_id = ?"
+                );
+                $stmtConsult->execute([$id, $_SESSION['user_id']]);
+                $canAccess = ($stmtConsult->fetchColumn() > 0);
+            }
+
+            // Hospitalisation dans ce service (y compris sortis)
             if (!$canAccess) {
                 $stmtAccess = $this->db->prepare(
                     "SELECT COUNT(*) FROM hospitalisations WHERE patient_id = ? AND service_id = ?"
@@ -192,6 +258,16 @@ class PatientController extends UnifiedController {
                 $stmtAccess->execute([$id, $_SESSION['service_id']]);
                 $canAccess = ($stmtAccess->fetchColumn() > 0);
             }
+
+            // Patient en admission aux urgences assigné à ce médecin
+            if (!$canAccess) {
+                $stmtUrg = $this->db->prepare(
+                    "SELECT COUNT(*) FROM urgences_patients WHERE patient_id = ? AND medecin_id = ?"
+                );
+                $stmtUrg->execute([$id, $_SESSION['user_id']]);
+                $canAccess = ($stmtUrg->fetchColumn() > 0);
+            }
+
             if (!$canAccess) {
                 $this->audit->logAction('READ', 'patients', $id, null, "ACCÈS REFUSÉ : hors service");
                 die("Accès Interdit : Ce patient n'appartient pas à votre service.");
@@ -200,6 +276,25 @@ class PatientController extends UnifiedController {
 
         // 3. Traçabilité : Enregistrer que le dossier a été consulté
         $this->audit->logRead('patients', $id, "Consultation du dossier complet");
+
+        // 3b. Enrichissement antécédents depuis la dernière consultation si champs vides dans patients
+        if (empty($patient['allergies']) || empty($patient['antecedents_medicaux'])) {
+            $stmtAtcd = $this->db->prepare("
+                SELECT atcd_medicaux, atcd_chirurgicaux, atcd_familiaux, atcd_allergies
+                FROM consultations
+                WHERE patient_id = ?
+                ORDER BY date_consultation DESC
+                LIMIT 1
+            ");
+            $stmtAtcd->execute([$id]);
+            $atcd = $stmtAtcd->fetch(PDO::FETCH_ASSOC);
+            if ($atcd) {
+                if (empty($patient['allergies']))            $patient['allergies']               = $atcd['atcd_allergies']   ?? '';
+                if (empty($patient['antecedents_medicaux'])) $patient['antecedents_medicaux']    = $atcd['atcd_medicaux']    ?? '';
+                if (empty($patient['antecedents_chirurgicaux'])) $patient['antecedents_chirurgicaux'] = $atcd['atcd_chirurgicaux'] ?? '';
+                if (empty($patient['antecedents_familiaux'])) $patient['antecedents_familiaux']  = $atcd['atcd_familiaux']   ?? '';
+            }
+        }
 
         // 4. Récupération de l'historique des consultations avec le nom du médecin
         $queryConsults = "SELECT c.*, u.nom as medecin_nom, u.prenom as medecin_prenom
@@ -229,12 +324,18 @@ class PatientController extends UnifiedController {
         }
 
         // 5. Récupération des derniers bilans et résultats
-$queryBilans = "SELECT prl.*, u.nom as medecin_prescripteur, dl.date_creation as date_demande, dl.statut as statut_demande
-                FROM patient_resultats_labo prl
-                JOIN demandes_laboratoire dl ON prl.demande_id = dl.id
-                LEFT JOIN users u ON prl.medecin_prescripteur_id = u.id
-                WHERE prl.patient_id = :patient_id
-                ORDER BY prl.date_resultat DESC, prl.id DESC";
+$queryBilans = "
+    SELECT re.id, re.resultat, re.date_resultat, re.interpretation,
+           dl.patient_id, dl.id as demande_id, dl.created_at as date_demande,
+           dl.statut as statut_demande, el.nom as nom_examen, el.categorie,
+           u.nom as medecin_prescripteur
+    FROM resultats_examens re
+    JOIN demande_examens de ON re.examen_id = de.id
+    JOIN demandes_laboratoire dl ON de.demande_id = dl.id
+    LEFT JOIN examens_laboratoire el ON de.examen_id = el.id
+    LEFT JOIN users u ON dl.medecin_id = u.id
+    WHERE dl.patient_id = :patient_id
+    ORDER BY re.date_resultat DESC, re.id DESC";
 
 $stmtB = $this->db->prepare($queryBilans);
 $stmtB->bindParam(':patient_id', $id);
@@ -252,12 +353,15 @@ $bilans = $stmtB->fetchAll(PDO::FETCH_ASSOC);
 
         // Récupérer l'historique des soins exécutés
 $stmtH = $this->db->prepare("
-    SELECT sd.*, u.nom as infirmier_nom
-    FROM soins_details sd
-    JOIN soins_planification sp ON sd.plan_id = sp.id
-    LEFT JOIN users u ON sd.infirmier_id = u.id
-    WHERE sp.patient_id = ? AND sd.execute = 1
-    ORDER BY sd.date_execution DESC
+    SELECT sh.id, sh.type_soin as soin_description, sh.type_soin as categorie,
+           sh.description, sh.date_realisee as date_execution,
+           sh.statut, sh.note_execution,
+           u.nom as infirmier_nom
+    FROM soins_hospitalisation sh
+    LEFT JOIN users u ON sh.user_id_executant = u.id
+    WHERE sh.admission_id IN (SELECT id FROM hospitalisations WHERE patient_id = ?)
+    AND sh.statut IN ('REALISE', 'realise')
+    ORDER BY sh.date_realisee DESC
 ");
 $stmtH->execute([$id]);
 $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
@@ -276,9 +380,10 @@ $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
         $stmtCRH->execute([$id]);
         $comptes_rendus = $stmtCRH->fetchAll(PDO::FETCH_ASSOC);
 
-        // 8. Prescriptions médicaments (toutes consultations du patient)
+        // 8. Prescriptions médicaments — ancien système (prescriptions) + nouveau (ordonnances_pharmacie)
         $prescriptions = [];
         try {
+            // Ancien système
             $stmtPres = $this->db->prepare("
                 SELECT p.id as prescription_id, p.date_prescription, p.statut as statut_prescription,
                        p.numero_ordonnance,
@@ -294,30 +399,83 @@ $history = $stmtH->fetchAll(PDO::FETCH_ASSOC);
             ");
             $stmtPres->execute([$id]);
             $prescriptions = $stmtPres->fetchAll(PDO::FETCH_ASSOC);
+
+            // Nouveau système (ordonnances_pharmacie créées via PharmacieService)
+            $stmtOP = $this->db->prepare("
+                SELECT CONCAT('op_', op.id) as prescription_id,
+                       op.date_creation as date_prescription,
+                       op.statut as statut_prescription,
+                       NULL as numero_ordonnance,
+                       om.posologie, om.duree,
+                       NULL as frequence, om.quantite, NULL as voie,
+                       COALESCE(om.nom_medicament, m.nom, 'Médicament') as medicament_nom,
+                       COALESCE(m.forme, '') as forme,
+                       COALESCE(m.dosage, '') as dosage,
+                       u.nom as medecin_nom
+                FROM ordonnances_pharmacie op
+                JOIN consultations c ON c.id = op.consultation_id
+                JOIN ordonnance_medicaments om ON om.ordonnance_id = op.id
+                LEFT JOIN medicaments m ON m.id = om.medicament_id
+                LEFT JOIN users u ON u.id = c.medecin_id
+                WHERE c.patient_id = ?
+                ORDER BY op.date_creation DESC
+            ");
+            $stmtOP->execute([$id]);
+            $nouvelles = $stmtOP->fetchAll(PDO::FETCH_ASSOC);
+
+            // Fusion : nouvelles en premier, puis anciennes
+            $prescriptions = array_merge($nouvelles, $prescriptions);
         } catch (PDOException $e) { error_log("prescriptions dossier: " . $e->getMessage()); }
 
-        // 9. Bilans demandés (avec statut, incluant résultats s'ils existent)
+        // 9. Bilans demandés (avec statut et noms d'examens via demande_examens)
         $bilans_demandes = [];
         try {
             $stmtBD = $this->db->prepare("
                 SELECT dl.id, dl.statut, dl.date_creation, dl.urgence,
-                       el.nom as nom_examen, el.categorie,
+                       (SELECT GROUP_CONCAT(el2.nom ORDER BY el2.nom SEPARATOR ', ')
+                        FROM demande_examens de2
+                        JOIN examens_laboratoire el2 ON el2.id = de2.examen_id
+                        WHERE de2.demande_id = dl.id) as nom_examen,
+                       (SELECT el3.categorie FROM demande_examens de3
+                        JOIN examens_laboratoire el3 ON el3.id = de3.examen_id
+                        WHERE de3.demande_id = dl.id LIMIT 1) as categorie,
                        u.nom as medecin_nom, u.prenom as medecin_prenom,
-                       prl.valeur_numerique, prl.unite, prl.anormal,
-                       prl.valeur_normale_min, prl.valeur_normale_max,
-                       prl.resultat, prl.date_resultat
+                       prl.resultat, prl.interpretation, prl.valeur_reference,
+                       prl.date_resultat,
+                       NULL as valeur_numerique, NULL as unite, NULL as anormal,
+                       NULL as valeur_normale_min, NULL as valeur_normale_max
                 FROM demandes_laboratoire dl
-                JOIN consultations c ON dl.consultation_id = c.id
-                LEFT JOIN examens_laboratoire el ON dl.examen_id = el.id
-                LEFT JOIN users u ON c.medecin_id = u.id
-                LEFT JOIN patient_resultats_labo prl
-                       ON prl.demande_id = dl.id AND prl.patient_id = c.patient_id
-                WHERE c.patient_id = ?
+                LEFT JOIN users u ON dl.medecin_id = u.id
+                LEFT JOIN demande_examens dex ON dex.demande_id = dl.id
+                LEFT JOIN resultats_examens prl ON prl.examen_id = dex.id
+                WHERE dl.patient_id = ?
+                GROUP BY dl.id, prl.id
                 ORDER BY dl.date_creation DESC
             ");
             $stmtBD->execute([$id]);
             $bilans_demandes = $stmtBD->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { error_log("bilans_demandes dossier: " . $e->getMessage()); }
+
+        // 9b. Bilans imagerie/radiologie
+        $bilans_imagerie = [];
+        try {
+            $stmtIM = $this->db->prepare("
+                SELECT di.id, di.statut, di.date_creation, di.urgence,
+                       CONCAT(UPPER(di.type_examen), ' — ', di.partie_corps) as nom_examen,
+                       'Imagerie' as categorie,
+                       u.nom as medecin_nom, u.prenom as medecin_prenom,
+                       di.interpretation as resultat, di.conclusion as interpretation,
+                       di.date_resultats as date_resultat,
+                       di.fichier_preview, di.type_examen, di.partie_corps,
+                       di.avec_contraste, di.description
+                FROM demandes_imagerie di
+                LEFT JOIN users u ON di.medecin_id = u.id
+                WHERE di.patient_id = ?
+                ORDER BY di.date_creation DESC
+            ");
+            $stmtIM->execute([$id]);
+            $bilans_imagerie = $stmtIM->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { error_log("bilans_imagerie dossier: " . $e->getMessage()); }
 
         // 10. Chargement de la vue avec toutes les variables préparées
         require_once __DIR__ . '/../views/patients/dossier.php';

@@ -38,7 +38,7 @@
     <script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
     <script src="<?= BASE_URL ?>public/js/main.js"></script>
 
-<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+<!--<script src="<?= BASE_URL ?>public/js/chart.umd.min.js"></script>-->
 <script>
 let evolutionData = {};
 let patientName = '';

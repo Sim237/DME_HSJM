@@ -8,7 +8,7 @@ include __DIR__ . '/../../layouts/header.php';
 
 <div class="container-fluid">
     <div class="row">
-        <?php include __DIR__ . '/../../layouts/sidebar.php'; ?>
+
 
         <main class="col-12 px-md-4 consultation-form" style="margin-left: 0 !important;">
 

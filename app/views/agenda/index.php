@@ -1,8 +1,5 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
-<!-- Google Fonts & Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <style>
     :root {
@@ -171,7 +168,7 @@
 </div>
 
 <!-- SCRIPTS -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/fullcalendar.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

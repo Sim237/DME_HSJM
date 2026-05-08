@@ -1,13 +1,14 @@
+<?php require_once __DIR__ . '/../layouts/header.php'; ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title>Gestion Famille</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="<?= BASE_URL ?>public/css/bootstrap.min.css" rel="stylesheet">-->
 </head>
 <body>
     <div class="container mt-3">
         <h3>Gestion Famille - Patient #<?= $patient_id ?></h3>
-        
+
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
@@ -31,7 +32,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between">
@@ -111,13 +112,13 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!--<script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>-->
     <script>
         function planifierVisite() {
             const nom = prompt('Nom du visiteur:');
             const relation = prompt('Relation:');
             const date = prompt('Date et heure (YYYY-MM-DD HH:MM):');
-            
+
             if (nom && relation && date) {
                 fetch('/modules/visite/planifier', {
                     method: 'POST',

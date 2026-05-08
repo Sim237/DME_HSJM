@@ -11,7 +11,7 @@ include __DIR__ . '/../../layouts/header.php';
 
 <div class="container-fluid">
     <div class="row">
-        <?php include __DIR__ . '/../../layouts/sidebar.php'; ?>
+
 
         <main class="col-12 px-md-4 consultation-form" style="margin-left: 0 !important;">
             <?php
@@ -109,8 +109,61 @@ include __DIR__ . '/../../layouts/header.php';
                             </div>
                         </div>
                         <?php endif; ?>
-                    </div>
-                </div>
+
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <!-- BLOC IMAGERIE MÉDICALE / RADIOLOGIE                        -->
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <div class="mb-4 p-3 rounded border" style="background:#f0f7ff; border-color:#93c5fd !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0 fw-bold text-primary">
+                                    <i class="fas fa-x-ray me-2"></i> Demandes d'Imagerie / Radiologie
+                                </h6>
+                                <div class="d-flex gap-2">
+                                    <button type="button"
+                                            class="btn btn-primary btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalDemandeImagerie">
+                                        <i class="fas fa-plus me-1"></i> Demande bilan Imagerie
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm fw-bold"
+                                            id="btnEnvoyerRadio"
+                                            onclick="envoyerEnRadiologie()"
+                                            style="display:none;">
+                                        <i class="fas fa-paper-plane me-1"></i> Envoyer en Radiologie
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Alertes -->
+                            <div id="alertesRadio"></div>
+
+                            <!-- Tableau prévisualisation imagerie -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0 bg-white" id="tableImagerie">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Modalité</th>
+                                            <th>Partie du corps</th>
+                                            <th>Urgence</th>
+                                            <th>Instructions</th>
+                                            <th>Statut</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="listeImagerie">
+                                        <!-- Rempli dynamiquement -->
+                                    </tbody>
+                                </table>
+                                <div id="emptyStateImagerie" class="text-center text-muted py-3">
+                                    <i class="fas fa-x-ray mb-2 fs-4 text-secondary"></i><br>
+                                    Aucune demande d'imagerie.<br>
+                                    <small>Cliquez sur "Demande bilan Imagerie" pour prescrire.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /card-body -->
+                </div><!-- /card -->
 
                 <!-- Boutons de navigation -->
                 <div class="card shadow-sm mb-5">
@@ -192,7 +245,105 @@ include __DIR__ . '/../../layouts/header.php';
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MODAL DEMANDE D'IMAGERIE / RADIOLOGIE                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalDemandeImagerie" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background:#1d4ed8;">
+                <h5 class="modal-title"><i class="fas fa-x-ray me-2"></i> Demande d'Imagerie Médicale</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formAjoutImagerie" onsubmit="ajouterImagerieToListe(event)">
+                <div class="modal-body">
+
+                    <div class="row g-3">
+                        <!-- Modalité -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Modalité <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modaliteImagerie" name="modalite" required onchange="updatePartieCorp()">
+                                <option value="">— Choisir la modalité —</option>
+                                <option value="radiographie">🩻 Radiographie</option>
+                                <option value="echographie">🔊 Échographie</option>
+                                <option value="scanner">💻 Scanner (TDM)</option>
+                                <option value="irm">🧲 IRM</option>
+                                <option value="mammographie">🔬 Mammographie</option>
+                                <option value="autre">📋 Autre</option>
+                            </select>
+                        </div>
+
+                        <!-- Partie du corps -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Partie du corps / Région <span class="text-danger">*</span></label>
+                            <select class="form-select" id="partieCorpsSelect" name="partie_corps" required>
+                                <option value="">— Sélectionner d'abord la modalité —</option>
+                            </select>
+                        </div>
+
+                        <!-- Urgence -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Niveau d'urgence</label>
+                            <select class="form-select" name="urgence" id="urgenceImagerie">
+                                <option value="NORMAL">Normal</option>
+                                <option value="URGENT">🔴 URGENT</option>
+                                <option value="TRES_URGENT">🚨 TRÈS URGENT</option>
+                            </select>
+                        </div>
+
+                        <!-- Côté -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Côté / Latéralité</label>
+                            <select class="form-select" name="cote">
+                                <option value="">Non applicable</option>
+                                <option value="droit">Droit</option>
+                                <option value="gauche">Gauche</option>
+                                <option value="bilateral">Bilatéral</option>
+                            </select>
+                        </div>
+
+                        <!-- Injection de contraste -->
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="avecContraste" name="avec_contraste" value="1">
+                                <label class="form-check-label fw-bold" for="avecContraste">
+                                    💉 Avec produit de contraste
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Indication clinique -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Indication clinique <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="indication" id="indicationImagerie" rows="2"
+                                      required
+                                      placeholder="Ex : Douleur thoracique, suspicion de fracture, contrôle post-opératoire..."></textarea>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Instructions particulières</label>
+                            <textarea class="form-control" name="instructions" rows="2"
+                                      placeholder="Informations complémentaires pour le radiologue..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Aperçu info -->
+                    <div id="infoImagerie" class="mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Ajouter à la liste
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
+/* ─── LABO (code existant conservé) ─── */
 let examensLaboratoire = [];
 let examensDisponibles = [];
 
@@ -213,13 +364,8 @@ function chargerExamensDisponibles() {
 function chargerExamensCategorie() {
     const categorie = document.getElementById('categorieExamen').value;
     const select = document.getElementById('examen_id');
-
     select.innerHTML = '<option value="">Sélectionner un examen...</option>';
-
-    const examens = categorie ?
-        examensDisponibles.filter(e => e.categorie === categorie) :
-        examensDisponibles;
-
+    const examens = categorie ? examensDisponibles.filter(e => e.categorie === categorie) : examensDisponibles;
     examens.forEach(examen => {
         const option = document.createElement('option');
         option.value = examen.id;
@@ -233,54 +379,31 @@ function afficherInfoExamen() {
     const select = document.getElementById('examen_id');
     const option = select.selectedOptions[0];
     const infoDiv = document.getElementById('infoExamen');
-
-    if (!option || !option.value) {
-        infoDiv.innerHTML = '';
-        return;
-    }
-
+    if (!option || !option.value) { infoDiv.innerHTML = ''; return; }
     const examen = JSON.parse(option.dataset.examen);
-
     let html = `<div class="alert alert-info py-2">`;
     html += `<strong>Type prélèvement:</strong> ${examen.type_prelevement}<br>`;
     html += `<strong>Délai:</strong> ${examen.delai_rendu_heures}h`;
-    if (examen.a_jeun_requis) {
-        html += ` <span class="badge bg-warning text-dark">A jeun requis</span>`;
-    }
+    if (examen.a_jeun_requis) html += ` <span class="badge bg-warning text-dark">A jeun requis</span>`;
     html += `</div>`;
-
     infoDiv.innerHTML = html;
-
-    // Cocher automatiquement "A jeun" si requis
     document.getElementById('a_jeun').checked = examen.a_jeun_requis;
 }
 
 function ajouterExamenToListe(event) {
     event.preventDefault();
-
     const form = event.target;
     const select = document.getElementById('examen_id');
     const option = select.selectedOptions[0];
-
     if (!option || !option.value) return;
-
     const examen = JSON.parse(option.dataset.examen);
-
     const nouvelExamen = {
-        id: examen.id,
-        nom: examen.nom,
-        categorie: examen.categorie,
-        type_prelevement: examen.type_prelevement,
-        delai_rendu_heures: examen.delai_rendu_heures,
-        urgent: form.urgent.checked,
-        a_jeun: form.a_jeun.checked,
-        instructions: form.instructions.value
+        id: examen.id, nom: examen.nom, categorie: examen.categorie,
+        type_prelevement: examen.type_prelevement, delai_rendu_heures: examen.delai_rendu_heures,
+        urgent: form.urgent.checked, a_jeun: form.a_jeun.checked, instructions: form.instructions.value
     };
-
     examensLaboratoire.push(nouvelExamen);
     afficherListeExamens();
-
-    // Fermer modal et reset form
     bootstrap.Modal.getInstance(document.getElementById('modalDemandeExamen')).hide();
     form.reset();
     document.getElementById('infoExamen').innerHTML = '';
@@ -290,14 +413,9 @@ function afficherListeExamens() {
     const tbody = document.getElementById('listeExamens');
     const emptyState = document.getElementById('emptyStateExamens');
     const btnEnvoyer = document.getElementById('btnEnvoyerLabo');
-
     if (examensLaboratoire.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.style.display = 'block';
-        btnEnvoyer.style.display = 'none';
-        return;
+        tbody.innerHTML = ''; emptyState.style.display = 'block'; btnEnvoyer.style.display = 'none'; return;
     }
-
     emptyState.style.display = 'none';
     btnEnvoyer.style.display = 'inline-block';
     tbody.innerHTML = examensLaboratoire.map((examen, index) => `
@@ -306,16 +424,9 @@ function afficherListeExamens() {
             <td><span class="badge bg-secondary">${examen.categorie}</span></td>
             <td>${examen.type_prelevement}</td>
             <td>${examen.delai_rendu_heures}h</td>
-            <td>
-                ${examen.urgent ? '<span class="badge bg-danger">URGENT</span>' : '<span class="badge bg-success">Normal</span>'}
-                ${examen.a_jeun ? '<br><small class="text-warning">A jeun</small>' : ''}
-            </td>
+            <td>${examen.urgent ? '<span class="badge bg-danger">URGENT</span>' : '<span class="badge bg-success">Normal</span>'}${examen.a_jeun ? '<br><small class="text-warning">A jeun</small>' : ''}</td>
             <td><span class="badge bg-warning">En attente</span></td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-danger" onclick="retirerExamen(${index})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
+            <td class="text-center"><button type="button" class="btn btn-sm btn-danger" onclick="retirerExamen(${index})"><i class="fas fa-trash"></i></button></td>
         </tr>
         <input type="hidden" name="examens[${index}][examen_id]" value="${examen.id}">
         <input type="hidden" name="examens[${index}][urgent]" value="${examen.urgent}">
@@ -330,33 +441,189 @@ function retirerExamen(index) {
 }
 
 function envoyerAuLaboratoire() {
-    if (examensLaboratoire.length === 0) {
-        alert('Veuillez d\'abord ajouter au moins un examen.');
-        return;
-    }
-
+    if (examensLaboratoire.length === 0) { alert('Veuillez d\'abord ajouter au moins un examen.'); return; }
     const patientId = document.querySelector('input[name="patient_id"]').value;
     const btn = document.getElementById('btnEnvoyerLabo');
-    btn.disabled = true;
-    btn.innerHTML = 'Envoi...';
-
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Envoi...';
     fetch('<?= BASE_URL ?>laboratoire/creer-demande-consultation', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ patient_id: patientId, examens: examensLaboratoire })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Pas de window.location.href ici
-            alert('✅ Demande envoyée ! Elle apparaîtra dans votre suivi de bilans.');
-            examensLaboratoire = [];
-            afficherListeExamens();
-            btn.innerHTML = '<i class="bi bi-send"></i> Envoyé';
+            showToast('✅ Demande labo envoyée avec succès !', 'success');
+            examensLaboratoire = []; afficherListeExamens();
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> Envoyé';
         } else {
             alert('❌ Erreur : ' + data.message);
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Envoyer au Laboratoire';
         }
     });
+}
+
+/* ─── IMAGERIE ─── */
+let demandesImagerie = [];
+
+// Parties du corps par modalité
+const partiesCorps = {
+    radiographie: ['Thorax','Abdomen','Crâne','Rachis cervical','Rachis dorsal','Rachis lombaire','Bassin','Épaule droite','Épaule gauche','Bras droit','Bras gauche','Avant-bras droit','Avant-bras gauche','Main droite','Main gauche','Cuisse droite','Cuisse gauche','Jambe droite','Jambe gauche','Pied droit','Pied gauche','Cheville droite','Cheville gauche','Genou droit','Genou gauche'],
+    echographie: ['Abdomen total','Pelvis','Obstétricale','Thyroïde','Sein droit','Sein gauche','Rein droit','Rein gauche','Foie','Vésicule biliaire','Rate','Prostate','Col utérin','Tendons','Paroi abdominale'],
+    scanner: ['Crâne','Thorax','Abdomen-Pelvis','Thorax-Abdomen-Pelvis','Rachis cervical','Rachis dorsal','Rachis lombaire','Bassin','Membre supérieur droit','Membre supérieur gauche','Membre inférieur droit','Membre inférieur gauche','Corps entier'],
+    irm: ['Crâne','Rachis cervical','Rachis dorsal','Rachis lombaire','Genou droit','Genou gauche','Épaule droite','Épaule gauche','Hanche droite','Hanche gauche','Poignet droit','Poignet gauche','Pelvis','Sein droit','Sein gauche','Abdomen','Corps entier'],
+    mammographie: ['Sein droit','Sein gauche','Bilatéral'],
+    autre: ['À préciser dans les instructions']
+};
+
+const iconeModalite = {
+    radiographie: '🩻', echographie: '🔊', scanner: '💻', irm: '🧲', mammographie: '🔬', autre: '📋'
+};
+
+function updatePartieCorp() {
+    const modalite = document.getElementById('modaliteImagerie').value;
+    const select   = document.getElementById('partieCorpsSelect');
+    select.innerHTML = '<option value="">— Choisir la partie —</option>';
+    if (!modalite) return;
+    (partiesCorps[modalite] || []).forEach(p => {
+        const o = document.createElement('option');
+        o.value = p; o.textContent = p;
+        select.appendChild(o);
+    });
+    // Infos contraste
+    const infoDiv = document.getElementById('infoImagerie');
+    if (modalite === 'scanner' || modalite === 'irm') {
+        infoDiv.innerHTML = `<div class="alert alert-warning py-2 small"><i class="fas fa-info-circle me-1"></i> Pour le <strong>${modalite.toUpperCase()}</strong>, vérifiez la créatinine et les allergies au produit de contraste si injection prévue.</div>`;
+    } else {
+        infoDiv.innerHTML = '';
+    }
+}
+
+function ajouterImagerieToListe(event) {
+    event.preventDefault();
+    const form     = event.target;
+    const modalite = form.modalite.value;
+    const partie   = form.partie_corps.value;
+    const indication = form.indication.value.trim();
+
+    if (!modalite || !partie || !indication) {
+        alert('Veuillez renseigner la modalité, la partie du corps et l\'indication clinique.'); return;
+    }
+
+    const demande = {
+        modalite,
+        partie_corps: partie,
+        urgence: form.urgence.value,
+        cote: form.cote.value,
+        avec_contraste: form.avec_contraste.checked,
+        indication,
+        instructions: form.instructions.value
+    };
+
+    demandesImagerie.push(demande);
+    afficherListeImagerie();
+    bootstrap.Modal.getInstance(document.getElementById('modalDemandeImagerie')).hide();
+    form.reset();
+    document.getElementById('infoImagerie').innerHTML = '';
+    document.getElementById('partieCorpsSelect').innerHTML = '<option value="">— Sélectionner d\'abord la modalité —</option>';
+}
+
+function afficherListeImagerie() {
+    const tbody    = document.getElementById('listeImagerie');
+    const empty    = document.getElementById('emptyStateImagerie');
+    const btnRadio = document.getElementById('btnEnvoyerRadio');
+
+    if (demandesImagerie.length === 0) {
+        tbody.innerHTML = ''; empty.style.display = 'block'; btnRadio.style.display = 'none'; return;
+    }
+    empty.style.display  = 'none';
+    btnRadio.style.display = 'inline-block';
+
+    const urgenceBadge = { NORMAL: 'bg-success', URGENT: 'bg-danger', TRES_URGENT: 'bg-dark' };
+
+    tbody.innerHTML = demandesImagerie.map((d, i) => `
+        <tr>
+            <td class="fw-bold">${iconeModalite[d.modalite] || '📋'} ${d.modalite.charAt(0).toUpperCase() + d.modalite.slice(1)}</td>
+            <td>${d.partie_corps}${d.cote ? ' <span class="text-muted small">('+d.cote+')</span>' : ''}${d.avec_contraste ? ' <span class="badge bg-info text-dark ms-1">+Contraste</span>' : ''}</td>
+            <td><span class="badge ${urgenceBadge[d.urgence] || 'bg-secondary'}">${d.urgence}</span></td>
+            <td class="small text-muted">${d.indication.substring(0,60)}${d.indication.length>60?'…':''}</td>
+            <td><span class="badge bg-warning text-dark">En attente</span></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="retirerImagerie(${i})" title="Supprimer">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function retirerImagerie(index) {
+    demandesImagerie.splice(index, 1);
+    afficherListeImagerie();
+}
+
+function envoyerEnRadiologie() {
+    if (demandesImagerie.length === 0) { alert('Aucune demande d\'imagerie à envoyer.'); return; }
+
+    const patientId     = document.querySelector('input[name="patient_id"]').value;
+    const consultId     = document.querySelector('input[name="consultation_id"]')?.value || '';
+    const btn           = document.getElementById('btnEnvoyerRadio');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Envoi...';
+
+    fetch('<?= BASE_URL ?>imagerie/creer-demande-consultation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            patient_id:      patientId,
+            consultation_id: consultId,
+            medecin_id:      '<?= $_SESSION["user_id"] ?? "" ?>',
+            demandes:        demandesImagerie
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`✅ ${data.count || demandesImagerie.length} demande(s) envoyée(s) en radiologie !`, 'success');
+            demandesImagerie = [];
+            afficherListeImagerie();
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> Envoyé';
+        } else {
+            showToast('❌ Erreur : ' + (data.message || 'Inconnue'), 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Envoyer en Radiologie';
+        }
+    })
+    .catch(() => {
+        showToast('❌ Erreur réseau. Vérifiez la connexion.', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Envoyer en Radiologie';
+    });
+}
+
+/* ─── Toast utilitaire ─── */
+function showToast(msg, type = 'success') {
+    const container = document.getElementById('toastContainer') || (() => {
+        const d = document.createElement('div');
+        d.id = 'toastContainer';
+        d.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        d.style.zIndex = 9999;
+        document.body.appendChild(d);
+        return d;
+    })();
+
+    const id   = 'toast_' + Date.now();
+    const html = `
+        <div id="${id}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body fw-bold">${msg}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+    const el = document.getElementById(id);
+    new bootstrap.Toast(el, { delay: 4000 }).show();
+    el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 </script>
 

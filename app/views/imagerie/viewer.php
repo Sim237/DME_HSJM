@@ -1,11 +1,11 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
-<!-- LIBRAIRIES CORNERSTONE (MÉDICAL STANDARDS) -->
-<script src="https://cdn.jsdelivr.net/npm/cornerstone-core@2.6.1/dist/cornerstone.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dicom-parser@1.8.21/dist/dicomParser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cornerstone-wado-image-loader@4.13.2/dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cornerstone-math@0.1.9/dist/cornerstoneMath.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cornerstone-tools@6.0.10/dist/cornerstoneTools.min.js"></script>
+<!-- LIBRAIRIES CORNERSTONE (LOCAL) -->
+<script src="<?= BASE_URL ?>public/js/cornerstone/dicomParser.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/cornerstone/cornerstone.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/cornerstone/cornerstoneMath.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/cornerstone/cornerstoneWADOImageLoader.bundle.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/cornerstone/cornerstoneTools.min.js"></script>
 
 <style>
     body { background: #000; color: #fff; overflow: hidden; font-family: 'Segoe UI', sans-serif; }

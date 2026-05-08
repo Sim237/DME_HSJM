@@ -1,9 +1,8 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <!-- On force le chargement de Bootstrap JS au cas où il manquerait dans le footer -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!--<script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.css">-->
 
 <style>
     :root {

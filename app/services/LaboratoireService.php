@@ -26,12 +26,19 @@ class LaboratoireService {
         try {
             $this->db->beginTransaction();
 
+            // Récupérer patient_id et medecin_id depuis la consultation
+            $stmtC = $this->db->prepare("SELECT patient_id, medecin_id FROM consultations WHERE id = ?");
+            $stmtC->execute([$consultation_id]);
+            $consult = $stmtC->fetch(PDO::FETCH_ASSOC);
+            $patient_id = $consult['patient_id'] ?? null;
+            $medecin_id = $consult['medecin_id'] ?? null;
+
             // Créer la demande
             $stmt = $this->db->prepare("
-                INSERT INTO demandes_laboratoire (consultation_id, statut, date_creation)
-                VALUES (?, 'EN_ATTENTE', NOW())
+                INSERT INTO demandes_laboratoire (consultation_id, patient_id, medecin_id, statut, date_creation)
+                VALUES (?, ?, ?, 'EN_ATTENTE', NOW())
             ");
-            $stmt->execute([$consultation_id]);
+            $stmt->execute([$consultation_id, $patient_id, $medecin_id]);
             $demande_id = $this->db->lastInsertId();
 
             // Ajouter les examens

@@ -11,8 +11,7 @@ $delai_moyen    = $statistiques['delai_moyen'] ?? 0;
 $taux_qualite   = $statistiques['taux_qualite'] ?? 98.5;
 ?>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--<link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.css">
 
 <style>
     /* ── Mode Cockpit : masquer sidebar et étirer le main ── */

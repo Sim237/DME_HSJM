@@ -1,8 +1,7 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <!-- Google Fonts & Icons -->
-<!--<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">-->
-<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">-->
+<!--<link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.css">-->
 
 <style>
     :root {
@@ -99,8 +98,30 @@
 
     .btn-add-line:hover { background: var(--hsjm-light-blue); }
 
-    .input-time-custom { max-width: 95px; font-weight: 700; text-align: center; border-right: none; border-radius: 10px 0 0 10px; }
-    .input-desc-custom { border-radius: 0 10px 10px 0; }
+    .input-time-custom { max-width: 90px; font-weight: 700; text-align: center; border-right: none; border-radius: 10px 0 0 10px; }
+    .input-desc-custom { border-radius: 0; }
+    .input-cond-custom {
+        max-width: 130px; border-radius: 0; font-size: .78rem;
+        border-left: 2px dashed #fbbf24; background: #fffbeb; color: #92400e;
+        font-style: italic;
+    }
+    .input-cond-custom::placeholder { color: #d97706; }
+
+    /* Ligne rayée */
+    .soin-ligne { position: relative; }
+    .soin-ligne.barree { opacity: .5; }
+    .soin-ligne.barree input { text-decoration: line-through; background: #fee2e2 !important; pointer-events: none; }
+    .badge-corr { background:#ede9fe; color:#7c3aed; font-size:.65rem; font-weight:700;
+        border-radius:20px; padding:1px 8px; white-space:nowrap; }
+
+    /* Boutons inline */
+    .btn-rayer-plan {
+        border: none; background: none; color: #f87171; font-size: .7rem;
+        padding: 0 6px; cursor: pointer; opacity: .7; transition: opacity .15s;
+        flex-shrink: 0;
+    }
+    .btn-rayer-plan:hover { opacity: 1; }
+    .btn-suppr { border-radius: 0 10px 10px 0; }
 
     .btn-save-plan {
         background: var(--hsjm-blue);
@@ -129,8 +150,13 @@
                         <small class="text-muted">Établissement du protocole de soins pour les prochaines 24h</small>
                     </div>
                 </div>
-                <div class="d-flex gap-3">
-                    <a href="<?= BASE_URL ?>patients/dossier/<?= $patient['id'] ?>" class="btn btn-link text-muted fw-bold text-decoration-none mt-2">Annuler</a>
+                <div class="d-flex gap-3 align-items-center">
+                    <a href="<?= BASE_URL ?>dashboard" class="btn btn-light fw-semibold rounded-pill px-3">
+                        <i class="bi bi-house me-1"></i>Tableau de bord
+                    </a>
+                    <a href="<?= BASE_URL ?>hospitalisation/suivi/<?= $patient['id'] ?>" class="btn btn-outline-secondary fw-semibold rounded-pill px-3">
+                        <i class="bi bi-arrow-left me-1"></i>Suivi patient
+                    </a>
                     <button type="submit" class="btn btn-save-plan shadow">
                         <i class="bi bi-check2-circle me-2"></i>Valider la planification
                     </button>
@@ -204,13 +230,20 @@
                                 </div>
                                 <div class="p-3" id="container-<?= $key ?>">
                                     <!-- Ligne par défaut -->
-                                    <div class="input-group mb-2 shadow-sm">
+                                    <div class="input-group mb-2 shadow-sm soin-ligne">
                                         <input type="time" name="soins[<?= $key ?>][heure][]" class="form-control form-control-sm input-time-custom">
                                         <input type="text" name="soins[<?= $key ?>][desc][]" class="form-control form-control-sm input-desc-custom" placeholder="<?= $cat['placeholder'] ?>">
+                                        <input type="text" name="soins[<?= $key ?>][condition][]" class="form-control form-control-sm input-cond-custom" placeholder="⚡ si fièvre…" title="Condition d'application (optionnel)">
+                                        <button type="button" class="btn btn-sm btn-outline-warning btn-rayer-plan px-2" onclick="rayerLigne(this)" title="Rayer cette ligne">
+                                            <i class="bi bi-pencil-slash"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-suppr px-2" onclick="this.closest('.soin-ligne').remove()" title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="px-3 pb-3">
-                                    <button type="button" class="btn btn-add-line" onclick="addRow('<?= $key ?>', '<?= $cat['placeholder'] ?>')">
+                                    <button type="button" class="btn btn-add-line" onclick="addRow('<?= $key ?>', '<?= addslashes($cat['placeholder']) ?>')">
                                         <i class="bi bi-plus-circle-dotted me-1"></i>Ajouter une ligne
                                     </button>
                                 </div>
@@ -232,27 +265,68 @@
 </div>
 
 <script>
-/**
- * Ajout dynamique de lignes de soin
- */
+/* ── Ajouter une ligne de soin ── */
 function addRow(cat, placeholder) {
     const container = document.getElementById('container-' + cat);
     const div = document.createElement('div');
-    div.className = 'input-group mb-2 shadow-sm animate__animated animate__fadeInDown';
-    div.style.animationDuration = '0.3s';
-
+    div.className = 'input-group mb-2 shadow-sm soin-ligne';
     div.innerHTML = `
         <input type="time" name="soins[${cat}][heure][]" class="form-control form-control-sm input-time-custom">
         <input type="text" name="soins[${cat}][desc][]" class="form-control form-control-sm input-desc-custom" placeholder="${placeholder}">
-        <button type="button" class="btn btn-outline-danger btn-sm border-start-0" onclick="this.parentElement.remove()" style="border-radius: 0 10px 10px 0;">
+        <input type="text" name="soins[${cat}][condition][]" class="form-control form-control-sm input-cond-custom" placeholder="⚡ si fièvre…" title="Condition d'application (optionnel)">
+        <button type="button" class="btn btn-sm btn-outline-warning btn-rayer-plan px-2" onclick="rayerLigne(this)" title="Rayer cette ligne">
+            <i class="bi bi-pencil-slash"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger btn-suppr px-2" onclick="this.closest('.soin-ligne').remove()" title="Supprimer">
             <i class="bi bi-trash"></i>
         </button>
     `;
-
-    // On retire le border-radius du champ texte quand il y a un bouton supprimer
-    div.querySelector('.input-desc-custom').style.borderRadius = "0";
-
     container.appendChild(div);
+}
+
+/* ── Rayer une ligne erronée et créer la correction ── */
+function rayerLigne(btn) {
+    const ligne = btn.closest('.soin-ligne');
+    const container = ligne.parentElement;
+
+    // Récupérer les valeurs avant de barrer
+    const heure = ligne.querySelector('input[type=time]').value;
+    const desc  = ligne.querySelector('.input-desc-custom').value;
+    const cond  = ligne.querySelector('.input-cond-custom')?.value || '';
+
+    // Barrer la ligne
+    ligne.classList.add('barree');
+    ligne.querySelectorAll('input').forEach(i => { i.disabled = true; i.removeAttribute('name'); });
+    btn.remove(); // retirer le bouton rayer
+
+    // Ajouter note visuelle
+    const note = document.createElement('div');
+    note.className = 'd-flex align-items-center gap-2 px-1 mb-1';
+    note.innerHTML = `<span style="font-size:.65rem;color:#dc2626;font-weight:700;">
+        <i class="bi bi-slash-circle me-1"></i>Ligne annulée (erreur de planification)
+    </span>`;
+    ligne.after(note);
+
+    // Créer la ligne corrigée (pré-remplie)
+    const cat = ligne.querySelector('input[type=time]')?.name?.match(/soins\[([^\]]+)\]/)?.[1]
+             || container.id.replace('container-', '');
+
+    const corrDiv = document.createElement('div');
+    corrDiv.className = 'input-group mb-2 shadow-sm soin-ligne';
+    corrDiv.innerHTML = `
+        <span class="input-group-text badge-corr border-0 px-2" style="background:#ede9fe;color:#7c3aed;font-size:.7rem;border-radius:10px 0 0 10px;">CORR.</span>
+        <input type="time" name="soins[${cat}][heure][]" class="form-control form-control-sm input-time-custom" value="${heure}" style="border-radius:0;">
+        <input type="text" name="soins[${cat}][desc][]" class="form-control form-control-sm input-desc-custom" value="${desc}" placeholder="Description corrigée…">
+        <input type="text" name="soins[${cat}][condition][]" class="form-control form-control-sm input-cond-custom" value="${cond}" placeholder="⚡ si fièvre…">
+        <button type="button" class="btn btn-sm btn-outline-warning btn-rayer-plan px-2" onclick="rayerLigne(this)" title="Rayer">
+            <i class="bi bi-pencil-slash"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger btn-suppr px-2" onclick="this.closest('.soin-ligne').remove()" title="Supprimer">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+    note.after(corrDiv);
+    corrDiv.querySelector('.input-desc-custom').focus();
 }
 </script>
 

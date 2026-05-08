@@ -76,6 +76,29 @@
                                         <?php foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $g) echo "<option value='$g'>$g</option>"; ?>
                                     </select>
                                 </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-bold text-secondary">TYPE DE CLIENT <span class="text-danger">*</span></label>
+                                    <div class="d-flex flex-wrap gap-2 mt-1">
+                                        <div class="form-check type-client-option">
+                                            <input class="form-check-input" type="radio" name="type_client" id="tcPayant" value="PAYANT_COMPTANT" checked>
+                                            <label class="form-check-label" for="tcPayant">
+                                                <i class="bi bi-cash-coin me-1 text-success"></i> Payant Comptant
+                                            </label>
+                                        </div>
+                                        <div class="form-check type-client-option">
+                                            <input class="form-check-input" type="radio" name="type_client" id="tcBon" value="BON_PRISE_EN_CHARGE">
+                                            <label class="form-check-label" for="tcBon">
+                                                <i class="bi bi-file-medical me-1 text-primary"></i> Bon de prise en charge
+                                            </label>
+                                        </div>
+                                        <div class="form-check type-client-option">
+                                            <input class="form-check-input" type="radio" name="type_client" id="tcAssurance" value="ASSURANCE">
+                                            <label class="form-check-label" for="tcAssurance">
+                                                <i class="bi bi-shield-check me-1 text-info"></i> Assurance
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -156,4 +179,7 @@
     .nav-pills .nav-link { color: #64748b; font-size: 0.9rem; }
     .nav-pills .nav-link.active { background-color: #fff !important; color: #3b82f6 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .fw-600 { font-weight: 600; }
+    .type-client-option { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 8px 14px; transition: all .15s; cursor: pointer; }
+    .type-client-option:has(.form-check-input:checked) { border-color: #3b82f6; background: #eff6ff; }
+    .type-client-option label { cursor: pointer; font-size: .88rem; font-weight: 600; }
 </style>

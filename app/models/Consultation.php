@@ -20,36 +20,42 @@ class Consultation {
             $data = $this->cleanEmptyStrings($data);
 
             $sql = "INSERT INTO consultations
-                    (patient_id, medecin_id, type_consultation, type, date_consultation, motif_consultation,
+                    (patient_id, medecin_id, type_consultation, date_consultation, motif_consultation,
                      histoire_maladie, automedication, complement_anamnese,
-                     temperature, tension_arterielle, frequence_cardiaque, poids, taille,
+                     temperature, tension_systolique, tension_diastolique, frequence_cardiaque, poids, taille,
                      examen_physique, resume_syndromique,
                      hypotheses_diagnostiques, diagnostic_principal, diagnostics_differentiels,
                      examens_paracliniques, plan_traitement, traitement_non_medicamenteux,
-                     surveillance, date_suivi)
+                     surveillance, notes_suivi, date_suivi)
                     VALUES
-                    (:patient_id, :medecin_id, :type_consultation, :type, :date_consultation, :motif_consultation,
+                    (:patient_id, :medecin_id, :type_consultation, :date_consultation, :motif_consultation,
                      :histoire_maladie, :automedication, :complement_anamnese,
-                     :temperature, :tension_arterielle, :frequence_cardiaque, :poids, :taille,
+                     :temperature, :tension_systolique, :tension_diastolique, :frequence_cardiaque, :poids, :taille,
                      :examen_physique, :resume_syndromique,
                      :hypotheses_diagnostiques, :diagnostic_principal, :diagnostics_differentiels,
                      :examens_paracliniques, :plan_traitement, :traitement_non_medicamenteux,
-                     :surveillance, :date_suivi)";
+                     :surveillance, :notes_suivi, :date_suivi)";
 
             $stmt = $this->db->prepare($sql);
+
+            // Décomposer tension_arterielle "120/80" → systolique / diastolique
+            $ta = $data['tension_arterielle'] ?? '';
+            $taParts = explode('/', $ta);
+            $taSys = isset($taParts[0]) && is_numeric(trim($taParts[0])) ? (int)trim($taParts[0]) : ($data['tension_systolique'] ?? null);
+            $taDia = isset($taParts[1]) && is_numeric(trim($taParts[1])) ? (int)trim($taParts[1]) : ($data['tension_diastolique'] ?? null);
 
             $result = $stmt->execute([
                 ':patient_id' => $data['patient_id'] ?? null,
                 ':medecin_id' => $data['medecin_id'] ?? 1,
                 ':type_consultation' => strtolower(trim($data['type'] ?? 'externe')),
-                ':type' => $data['type'] ?? 'GENERALE',
                 ':date_consultation' => $data['date_consultation'] ?? date('Y-m-d H:i:s'),
                 ':motif_consultation' => $data['motif_consultation'] ?? null,
                 ':histoire_maladie' => $data['histoire_maladie'] ?? null,
                 ':automedication' => $data['automedication'] ?? null,
                 ':complement_anamnese' => $data['complement_anamnese'] ?? null,
                 ':temperature' => $data['temperature'] ?? null,
-                ':tension_arterielle' => $data['tension_arterielle'] ?? null,
+                ':tension_systolique' => $taSys,
+                ':tension_diastolique' => $taDia,
                 ':frequence_cardiaque' => $data['frequence_cardiaque'] ?? null,
                 ':poids' => $data['poids'] ?? null,
                 ':taille' => $data['taille'] ?? null,
@@ -62,7 +68,8 @@ class Consultation {
                 ':plan_traitement' => $data['plan_traitement'] ?? null,
                 ':traitement_non_medicamenteux' => $data['traitement_non_medicamenteux'] ?? null,
                 ':surveillance' => $data['surveillance'] ?? null,
-                ':date_suivi' => $data['date_suivi'] ?? null
+                ':notes_suivi'  => $data['notes_suivi']  ?? null,
+                ':date_suivi'   => $data['date_suivi']   ?? null,
             ]);
 
             if ($result) {
@@ -135,13 +142,13 @@ class Consultation {
 
         $sql = "UPDATE consultations SET
                 type_consultation = :type_consultation,
-                type = :type,
                 motif_consultation = :motif_consultation,
                 histoire_maladie = :histoire_maladie,
                 automedication = :automedication,
                 complement_anamnese = :complement_anamnese,
                 temperature = :temperature,
-                tension_arterielle = :tension_arterielle,
+                tension_systolique = :tension_systolique,
+                tension_diastolique = :tension_diastolique,
                 frequence_cardiaque = :frequence_cardiaque,
                 poids = :poids,
                 taille = :taille,
@@ -154,10 +161,17 @@ class Consultation {
                 plan_traitement = :plan_traitement,
                 traitement_non_medicamenteux = :traitement_non_medicamenteux,
                 surveillance = :surveillance,
+                notes_suivi = :notes_suivi,
                 date_suivi = :date_suivi
                 WHERE id = :id";
 
         $stmt = $this->db->prepare($sql);
+
+        // Décomposer tension_arterielle "120/80" → systolique / diastolique
+        $ta = $data['tension_arterielle'] ?? '';
+        $taParts = explode('/', $ta);
+        $taSys = isset($taParts[0]) && is_numeric(trim($taParts[0])) ? (int)trim($taParts[0]) : ($data['tension_systolique'] ?? null);
+        $taDia = isset($taParts[1]) && is_numeric(trim($taParts[1])) ? (int)trim($taParts[1]) : ($data['tension_diastolique'] ?? null);
 
         $success = $stmt->execute([
             ':motif_consultation' => $data['motif_consultation'] ?? null,
@@ -165,7 +179,8 @@ class Consultation {
             ':automedication' => $data['automedication'] ?? null,
             ':complement_anamnese' => $data['complement_anamnese'] ?? null,
             ':temperature' => $data['temperature'] ?? null,
-            ':tension_arterielle' => $data['tension_arterielle'] ?? null,
+            ':tension_systolique' => $taSys,
+            ':tension_diastolique' => $taDia,
             ':frequence_cardiaque' => $data['frequence_cardiaque'] ?? null,
             ':poids' => $data['poids'] ?? null,
             ':taille' => $data['taille'] ?? null,
@@ -178,9 +193,9 @@ class Consultation {
             ':plan_traitement' => $data['plan_traitement'] ?? null,
             ':traitement_non_medicamenteux' => $data['traitement_non_medicamenteux'] ?? null,
             ':type_consultation' => strtolower(trim($data['type'] ?? 'externe')),
-            ':type' => $data['type'] ?? 'GENERALE',
             ':surveillance' => $data['surveillance'] ?? null,
-            ':date_suivi' => $data['date_suivi'] ?? null,
+            ':notes_suivi'  => $data['notes_suivi']  ?? null,
+            ':date_suivi'   => $data['date_suivi']   ?? null,
             ':id' => $id
         ]);
 
@@ -197,17 +212,16 @@ class Consultation {
 
 public function save($data) {
     $db = (new Database())->getConnection();
-    $sql = "INSERT INTO consultations (patient_id, medecin_id, motif_consultation, examen_physique, diagnostic_principal, traitement_prescrit, date_consultation)
-            VALUES (:pid, :mid, :motif, :examen, :diag, :traitement, NOW())";
+    $sql = "INSERT INTO consultations (patient_id, medecin_id, motif_consultation, examen_physique, diagnostic_principal, date_consultation)
+            VALUES (:pid, :mid, :motif, :examen, :diag, NOW())";
 
     $stmt = $db->prepare($sql);
     $stmt->execute([
-        ':pid' => $data['patient_id'],
-        ':mid' => $data['medecin_id'],
-        ':motif' => $data['motif'],
-        ':examen' => $data['examen_physique'],
-        ':diag' => $data['diagnostic'],
-        ':traitement' => $data['traitement']
+        ':pid'    => $data['patient_id'],
+        ':mid'    => $data['medecin_id'],
+        ':motif'  => $data['motif'] ?? $data['motif_consultation'] ?? null,
+        ':examen' => $data['examen_physique'] ?? null,
+        ':diag'   => $data['diagnostic'] ?? $data['diagnostic_principal'] ?? null,
     ]);
 
     return $db->lastInsertId();

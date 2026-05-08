@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosque d'Accueil - DME Hospital</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!--<link href="<?= BASE_URL ?>public/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>public/css/fontawesome/all.min.css" rel="stylesheet">-->
 </head>
 <body class="bg-primary">
 
@@ -19,7 +19,7 @@
                     </h1>
                     <h3 class="text-muted">Kiosque d'Accueil Automatique</h3>
                 </div>
-                
+
                 <div class="card-body p-5">
                     <div id="welcomeScreen">
                         <div class="text-center mb-5">
@@ -27,7 +27,7 @@
                             <h2 class="mt-3">Bienvenue !</h2>
                             <p class="lead">Effectuez votre check-in automatique</p>
                         </div>
-                        
+
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="card h-100 border-primary checkin-option" onclick="showCheckinForm()">
@@ -38,7 +38,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="card h-100 border-info checkin-option" onclick="showUrgenceInfo()">
                                     <div class="card-body text-center">
@@ -50,14 +50,14 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Formulaire Check-in -->
                     <div id="checkinForm" style="display: none;">
                         <div class="text-center mb-4">
                             <h3><i class="fas fa-user-check"></i> Check-in</h3>
                             <p>Veuillez saisir vos informations</p>
                         </div>
-                        
+
                         <form id="checkinFormData">
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -73,7 +73,7 @@
                                     <input type="text" name="dossier_numero" class="form-control form-control-lg" placeholder="P-2024-00001">
                                 </div>
                             </div>
-                            
+
                             <div class="d-grid gap-2 mt-4">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-check"></i> Confirmer le Check-in
@@ -84,7 +84,7 @@
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- Résultat Check-in -->
                     <div id="checkinResult" style="display: none;">
                         <div class="text-center">
@@ -94,13 +94,13 @@
                                 <h4>Votre numéro de file : <span id="numeroFile" class="badge bg-primary fs-3"></span></h4>
                                 <p class="mb-0">Veuillez patienter, vous serez appelé(e) prochainement</p>
                             </div>
-                            
+
                             <button class="btn btn-primary btn-lg mt-3" onclick="showWelcome()">
                                 <i class="fas fa-home"></i> Nouveau Check-in
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Info Urgence -->
                     <div id="urgenceInfo" style="display: none;">
                         <div class="text-center">
@@ -111,7 +111,7 @@
                                 <p class="mb-0">Bâtiment A - Rez-de-chaussée</p>
                                 <p class="mb-0">Ou appelez le personnel au poste d'accueil</p>
                             </div>
-                            
+
                             <button class="btn btn-primary btn-lg mt-3" onclick="showWelcome()">
                                 <i class="fas fa-arrow-left"></i> Retour
                             </button>
@@ -145,7 +145,7 @@
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
 <script>
 function showWelcome() {
     document.getElementById('welcomeScreen').style.display = 'block';
@@ -166,9 +166,9 @@ function showUrgenceInfo() {
 
 document.getElementById('checkinFormData').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(this);
-    
+
     fetch('<?= BASE_URL ?>kiosque/checkin', {
         method: 'POST',
         body: formData

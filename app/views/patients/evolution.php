@@ -28,7 +28,7 @@
     </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= BASE_URL ?>public/js/chart.umd.min.js"></script>
 <script>
 // Logique Température
 new Chart(document.getElementById('tempChart'), {

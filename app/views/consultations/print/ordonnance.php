@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Ordonnance - <?= htmlspecialchars($ordonnance['nom'] . ' ' . $ordonnance['prenom']) ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+   <!--nk href="<?= BASE_URL ?>public/css/bootstrap.min.css" rel="stylesheet">-->
     <!-- Font Awesome pour le symbole Rx -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+   <!--nk rel="stylesheet" href="<?= BASE_URL ?>public/css/fontawesome/all.min.css">-->
+
     <style>
         /* Configuration de l'impression A4 */
         @page {
@@ -26,7 +26,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             position: relative;
         }
-        
+
         /* En-tête Hôpital */
         .header-hopital {
             border-bottom: 3px double #0d6efd;
@@ -42,7 +42,7 @@
             font-size: 24px;
             text-transform: uppercase;
         }
-        
+
         /* Info Médecin & Patient */
         .doc-info { font-size: 14px; line-height: 1.4; }
         .patient-box {
@@ -52,7 +52,7 @@
             background-color: #f9f9f9;
             margin-bottom: 30px;
         }
-        
+
         /* Corps de l'ordonnance */
         .rx-symbol {
             font-size: 40px;
@@ -79,7 +79,7 @@
             color: #333;
             margin-left: 15px;
         }
-        
+
         /* Pied de page */
         .footer-page {
             position: absolute;
@@ -92,14 +92,14 @@
             border-top: 1px solid #ddd;
             padding-top: 10px;
         }
-        
+
         /* Signature */
         .signature-box {
             text-align: right;
             margin-top: 50px;
             margin-right: 20px;
         }
-        
+
         /* Mode Impression */
         @media print {
             body { background: white; }
@@ -120,7 +120,7 @@
 
     <!-- Feuille A4 -->
     <div class="page-a4">
-        
+
         <!-- En-tête -->
         <div class="header-hopital">
             <div>
@@ -146,7 +146,7 @@
                     <strong>NOM & PRÉNOM :</strong> <?= htmlspecialchars($ordonnance['nom'] . ' ' . $ordonnance['prenom']) ?>
                 </div>
                 <div class="col-4">
-                    <strong>ÂGE :</strong> 
+                    <strong>ÂGE :</strong>
                     <?= date_diff(date_create($ordonnance['date_naissance']), date_create('today'))->y ?> ans
                     (<?= $ordonnance['sexe'] ?>)
                 </div>
@@ -155,7 +155,7 @@
 
         <!-- Liste des médicaments -->
         <div class="rx-symbol">Rx</div>
-        
+
         <div class="med-list">
             <?php if (!empty($medicaments)): ?>
                 <?php foreach ($medicaments as $med): ?>

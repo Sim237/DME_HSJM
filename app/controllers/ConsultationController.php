@@ -161,10 +161,21 @@ public function formulaire() {
             $view_file = 'etape3_hypotheses.php';
             break;
         case 4:
-            // Pour l'étape 4, on peut avoir besoin de l'historique des examens
-            $stmtEx = $this->db->prepare("SELECT * FROM examens WHERE patient_id = ? ORDER BY date_demande DESC LIMIT 5");
-            $stmtEx->execute([$patient_id]);
-            $historique_examens = $stmtEx->fetchAll(PDO::FETCH_ASSOC);
+            // Historique des examens du patient (dégradé si tables absentes)
+            $historique_examens = [];
+            try {
+                $stmtEx = $this->db->prepare(
+                    "SELECT e.id, e.type_examen, e.statut, e.date_demande,
+                            GROUP_CONCAT(ed.nom_examen SEPARATOR ', ') AS noms
+                     FROM examens e
+                     LEFT JOIN examen_details ed ON ed.examen_id = e.id
+                     WHERE e.patient_id = ?
+                     GROUP BY e.id
+                     ORDER BY e.date_demande DESC LIMIT 5"
+                );
+                $stmtEx->execute([$patient_id]);
+                $historique_examens = $stmtEx->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) { /* table absente — on continue */ }
             $view_file = 'etape4_bilans.php';
             break;
         case 5:
@@ -236,21 +247,47 @@ public function formulaire() {
         }
 
         // --- ÉTAPE 5 : TRAITEMENT (PHARMACIE) ---
-        if ($etape_actuelle == 5 && !empty($_POST['medicaments'])) {
+        if ($etape_actuelle == 5) {
             require_once __DIR__ . '/../services/PharmacieService.php';
             $pharmacieService = new PharmacieService();
 
-            // ANTI-DOUBLON : On utilise l'ID existant (de l'étape 4) ou on crée
+            // ANTI-DOUBLON : On utilise l'ID existant ou on crée la consultation
             if (!isset($_SESSION['consultation_temp']['consultation_id'])) {
                 $consultation_id = $this->consultationModel->create($data);
-                $_SESSION['consultation_temp']['consultation_id'] = $consultation_id;
+                if ($consultation_id) {
+                    $_SESSION['consultation_temp']['consultation_id'] = $consultation_id;
+                }
             } else {
                 $consultation_id = $_SESSION['consultation_temp']['consultation_id'];
                 $this->consultationModel->update($consultation_id, $data);
             }
 
-            if ($consultation_id) {
-                $pharmacieService->creerOrdonnancePharmacie($consultation_id, $_POST['medicaments']);
+            // Créer l'ordonnance seulement s'il y a des médicaments ET une consultation valide
+            if (!empty($_POST['medicaments']) && !empty($consultation_id)) {
+                // Normaliser les médicaments (compatibilité nouvelles clés voie/instructions)
+                $medicamentsNormalises = [];
+                foreach ($_POST['medicaments'] as $m) {
+                    $medicamentsNormalises[] = [
+                        'medicament_id' => $m['medicament_id'] ?? null,
+                        'nom_medicament' => $m['nom_medicament'] ?? $m['nom'] ?? 'Médicament',
+                        'posologie'      => $m['posologie']      ?? '',
+                        'duree'          => $m['duree']          ?? '',
+                        'quantite'       => $m['quantite']       ?? 1,
+                        'voie'           => $m['voie']           ?? 'orale',
+                        'instructions'   => $m['instructions']   ?? '',
+                    ];
+                }
+
+                $ordonnance_id = $pharmacieService->creerOrdonnancePharmacie(
+                    $consultation_id,
+                    $medicamentsNormalises
+                );
+
+                if ($ordonnance_id) {
+                    $_SESSION['consultation_temp']['ordonnance_id'] = $ordonnance_id;
+                } else {
+                    error_log('[Etape5] Échec création ordonnance pour consultation_id=' . $consultation_id);
+                }
             }
         }
 
@@ -268,60 +305,115 @@ public function formulaire() {
 }
 
     /**
-     * Enregistrement final en base de données
+     * Enregistrement final en base de données — version robuste
      */
    private function finaliserConsultation() {
-    if (!isset($_SESSION['consultation_temp'])) {
-        header('Location: ' . BASE_URL . 'dashboard');
-        exit;
-    }
-
-    $data = $_SESSION['consultation_temp'];
-    $db = $this->db;
-
-    // --- LOGIQUE ANTI-DOUBLON ---
-    // On vérifie si un ID de consultation existe déjà en session (créé à l'étape 4 ou 5)
-    $consultation_id = $data['consultation_id'] ?? null;
-
-    if ($consultation_id) {
-        // Si l'ID existe, on MET À JOUR la ligne existante au lieu d'en créer une nouvelle
-        $this->consultationModel->update($consultation_id, $data);
-    } else {
-        // Sinon, on crée la consultation (cas où le médecin n'a demandé ni labo ni pharmacie)
-        $consultation_id = $this->consultationModel->create($data);
-    }
-
-    if ($consultation_id) {
-        // 1. On sort le patient de la file d'attente
-        // S'il y a un RDV, il va à l'ACCUEIL, sinon il est considéré comme SORTI
-        $nouveauStatut = !empty($data['date_suivi']) ? 'ACCUEIL' : 'SORTI';
-
-        $stmtUpdate = $db->prepare("UPDATE patients SET statut_parcours = ?, statut_hosp = 'AUCUN' WHERE id = ?");
-        $stmtUpdate->execute([$nouveauStatut, $data['patient_id']]);
-
-        // 2. LOGIQUE RENDEZ-VOUS
-        if (!empty($data['date_suivi'])) {
-            $stmtRDV = $db->prepare("INSERT INTO patient_rdv (patient_id, medecin_id, date_rdv, motif, statut)
-                                     VALUES (?, ?, ?, ?, 'CONFIRME')");
-            $stmtRDV->execute([
-                $data['patient_id'],
-                $_SESSION['user_id'],
-                $data['date_suivi'],
-                $data['motif_suivi'] ?? 'Suivi médical'
-            ]);
+    try {
+        // ── 0. Vérification de base ──────────────────────────────
+        if (!isset($_SESSION['consultation_temp'])) {
+            header('Location: ' . BASE_URL . 'dashboard');
+            exit;
         }
 
-        // 3. Règle de l'heure (Hospitaliser) et Date de clôture
-        $this->db->prepare("UPDATE consultations SET
-                            wait_hospital_until = DATE_ADD(NOW(), INTERVAL 1 HOUR),
-                            date_cloture = NOW(),
-                            statut = 'terminee'
-                            WHERE id = ?")
-                 ->execute([$consultation_id]);
+        $data       = $_SESSION['consultation_temp'];
+        $patient_id = $data['patient_id'] ?? $_POST['patient_id'] ?? null;
 
-        // 4. Nettoyage et redirection
+        if (!$patient_id) {
+            error_log('[finaliserConsultation] patient_id manquant');
+            header('Location: ' . BASE_URL . 'dashboard?error=patient_id_manquant');
+            exit;
+        }
+
+        // ── 1. Fusionner les données POST de l'étape 7 ──────────
+        $data = array_merge($data, [
+            'notes_suivi'  => $_POST['notes_suivi']  ?? $data['notes_suivi']  ?? null,
+            'date_suivi'   => $_POST['date_suivi']   ?? $data['date_suivi']   ?? null,
+            'motif_suivi'  => $_POST['motif_suivi']  ?? $data['motif_suivi']  ?? null,
+            'patient_id'   => $patient_id,
+            'medecin_id'   => $_SESSION['user_id'] ?? $data['medecin_id'] ?? 1,
+        ]);
+
+        // ── 2. Créer ou mettre à jour la consultation ────────────
+        $consultation_id = $data['consultation_id'] ?? null;
+
+        if ($consultation_id) {
+            $this->consultationModel->update($consultation_id, $data);
+        } else {
+            $consultation_id = $this->consultationModel->create($data);
+        }
+
+        if (!$consultation_id) {
+            error_log('[finaliserConsultation] Échec create/update consultation');
+            header('Location: ' . BASE_URL . 'consultation/formulaire?patient_id=' . $patient_id . '&type=' . ($data['type'] ?? 'EXTERNE') . '&etape=7&error=save_failed');
+            exit;
+        }
+
+        // ── 3. Mise à jour statut patient (colonnes optionnelles) ─
+        try {
+            // Vérifie si la colonne statut_parcours existe avant de l'utiliser
+            $chk = $this->db->query("SHOW COLUMNS FROM patients LIKE 'statut_parcours'");
+            if ($chk->rowCount() > 0) {
+                $nouveauStatut = !empty($data['date_suivi']) ? 'ACCUEIL' : 'SORTI';
+                $this->db->prepare("UPDATE patients SET statut_parcours = ? WHERE id = ?")
+                         ->execute([$nouveauStatut, $patient_id]);
+            }
+
+            $chk2 = $this->db->query("SHOW COLUMNS FROM patients LIKE 'statut_hosp'");
+            if ($chk2->rowCount() > 0) {
+                $this->db->prepare("UPDATE patients SET statut_hosp = 'AUCUN' WHERE id = ?")
+                         ->execute([$patient_id]);
+            }
+        } catch (Exception $e) {
+            error_log('[finaliserConsultation] Mise à jour statut patient ignorée : ' . $e->getMessage());
+        }
+
+        // ── 4. Clôture consultation (colonnes optionnelles) ───────
+        try {
+            $cols = $this->db->query("SHOW COLUMNS FROM consultations")->fetchAll(PDO::FETCH_COLUMN);
+            $sets = ['statut = ?'];
+            $vals = ['terminee'];
+
+            if (in_array('date_cloture', $cols)) {
+                $sets[] = 'date_cloture = NOW()';
+            }
+            if (in_array('wait_hospital_until', $cols)) {
+                $sets[] = 'wait_hospital_until = DATE_ADD(NOW(), INTERVAL 1 HOUR)';
+            }
+
+            $this->db->prepare('UPDATE consultations SET ' . implode(', ', $sets) . ' WHERE id = ?')
+                     ->execute(array_merge($vals, [$consultation_id]));
+        } catch (Exception $e) {
+            error_log('[finaliserConsultation] Clôture consultation ignorée : ' . $e->getMessage());
+        }
+
+        // ── 5. Rendez-vous de suivi ───────────
+        if (!empty($data['date_suivi'])) {
+            try {
+                $this->db->prepare(
+                    "INSERT INTO agenda_medical (patient_id, medecin_id, date_debut, date_fin, motif, statut, type_rdv)
+                     VALUES (?, ?, ?, DATE_ADD(?, INTERVAL 30 MINUTE), ?, 'CONFIRME', 'SUIVI')"
+                )->execute([
+                    $patient_id,
+                    $_SESSION['user_id'] ?? 1,
+                    $data['date_suivi'],
+                    $data['date_suivi'],
+                    $data['motif_suivi'] ?? 'Suivi médical'
+                ]);
+            } catch (Exception $e) {
+                error_log('[finaliserConsultation] RDV ignoré : ' . $e->getMessage());
+            }
+        }
+
+        // ── 6. Nettoyage session et redirection vers récapitulatif ───────────────────
         unset($_SESSION['consultation_temp']);
-        header('Location: ' . BASE_URL . 'dashboard?success=consult_saved');
+        header('Location: ' . BASE_URL . 'consultation/recapitulatif/' . $consultation_id);
+        exit;
+
+    } catch (Exception $e) {
+        error_log('[finaliserConsultation] Exception fatale : ' . $e->getMessage());
+        // Jamais de page blanche — toujours rediriger
+        $pid = $_POST['patient_id'] ?? $_SESSION['consultation_temp']['patient_id'] ?? '';
+        header('Location: ' . BASE_URL . ($pid ? 'patients/dossier/' . $pid : 'dashboard') . '?error=' . urlencode('Erreur finalisation : ' . $e->getMessage()));
         exit;
     }
 }
@@ -330,6 +422,11 @@ public function formulaire() {
      * Affichage du récapitulatif final
      */
     public function recapitulatif($id) {
+        // ── Migration silencieuse : s'assurer que notes_suivi existe ────────
+        try {
+            $this->db->exec("ALTER TABLE consultations ADD COLUMN IF NOT EXISTS notes_suivi TEXT NULL");
+        } catch (Exception $e) { /* silencieux */ }
+
         $consultation = $this->consultationModel->getById($id);
 
         if (!$consultation) {
@@ -338,12 +435,149 @@ public function formulaire() {
 
         $patient = $this->patientModel->getById($consultation['patient_id']);
 
-        // Vue : recapitulatif.php
+        // ── Antécédents patient ─────────────────────────────────────────────
+        $antecedents = [];
+        try {
+            $stmtA = $this->db->prepare(
+                "SELECT type, description, date_survenue
+                 FROM antecedents WHERE patient_id = ?
+                 ORDER BY type, date_survenue DESC"
+            );
+            $stmtA->execute([$consultation['patient_id']]);
+            foreach ($stmtA->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $antecedents[$r['type']][] = $r;
+            }
+        } catch (Exception $e) {}
+
+        // ── Examens / Bilans demandés ────────────────────────────────────────
+        $examens_list = [];
+        try {
+            $stmtE = $this->db->prepare(
+                "SELECT e.id, e.type_examen, e.urgence, e.statut, e.date_demande,
+                        GROUP_CONCAT(ed.nom_examen ORDER BY ed.nom_examen SEPARATOR ', ') AS noms_detail
+                 FROM examens e
+                 LEFT JOIN examen_details ed ON ed.examen_id = e.id
+                 WHERE e.consultation_id = ?
+                 GROUP BY e.id
+                 ORDER BY e.date_demande ASC"
+            );
+            $stmtE->execute([$id]);
+            $examens_list = $stmtE->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) { error_log('[recapitulatif] examens: '.$e->getMessage()); }
+
+        // ── Ordonnance + médicaments prescrits (table ordonnances_pharmacie) ──
+        $prescription = null;
+        $medicaments_prescrits = [];
+        try {
+            $stmtP = $this->db->prepare(
+                "SELECT op.*, u.nom AS prescripteur_nom, u.prenom AS prescripteur_prenom
+                 FROM ordonnances_pharmacie op
+                 LEFT JOIN consultations c ON c.id = op.consultation_id
+                 LEFT JOIN users u ON u.id = c.medecin_id
+                 WHERE op.consultation_id = ?
+                 ORDER BY op.id DESC LIMIT 1"
+            );
+            $stmtP->execute([$id]);
+            $prescription = $stmtP->fetch(PDO::FETCH_ASSOC);
+
+            if ($prescription) {
+                // La table ordonnance_medicaments peut avoir une colonne nom_medicament (ajoutée par PharmacieService)
+                $colsOm = $this->db->query("SHOW COLUMNS FROM ordonnance_medicaments")->fetchAll(PDO::FETCH_COLUMN);
+                $hasNomCol = in_array('nom_medicament', $colsOm);
+
+                $nomSelect = $hasNomCol
+                    ? "COALESCE(om.nom_medicament, m.nom, 'Médicament') AS nom_medicament"
+                    : "COALESCE(m.nom, 'Médicament') AS nom_medicament";
+
+                $stmtL = $this->db->prepare(
+                    "SELECT om.*, $nomSelect, m.forme, m.dosage, m.unite
+                     FROM ordonnance_medicaments om
+                     LEFT JOIN medicaments m ON m.id = om.medicament_id
+                     WHERE om.ordonnance_id = ?
+                     ORDER BY om.id ASC"
+                );
+                $stmtL->execute([$prescription['id']]);
+                $medicaments_prescrits = $stmtL->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Exception $e) { error_log('[recapitulatif] ordonnance: '.$e->getMessage()); }
+
+        // Services disponibles (pour modal transfer/hospitalisation)
+        $services = [];
+        try {
+            $services = $this->db->query("SELECT id, nom FROM services ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
+
+        // Lits disponibles groupés par service
+        $lits_dispo = [];
+        try {
+            $stmtL = $this->db->query(
+                "SELECT l.id, l.nom_lit, l.service_id, s.nom as service_nom
+                 FROM lits l JOIN services s ON l.service_id = s.id
+                 WHERE l.statut = 'DISPONIBLE' AND l.occupied_by_patient_id IS NULL
+                 ORDER BY s.nom, l.nom_lit"
+            );
+            foreach ($stmtL->fetchAll(PDO::FETCH_ASSOC) as $l) {
+                $lits_dispo[$l['service_id']][] = $l;
+            }
+        } catch (Exception $e) {}
+
+        // Critères d'hospitalisation IA
+        $criteres_hosp = [];
+        try {
+            require_once __DIR__ . '/../services/HospitalisationService.php';
+            $age = !empty($patient['date_naissance'])
+                ? date_diff(date_create($patient['date_naissance']), date_create('today'))->y : null;
+            $criteres_hosp = HospitalisationService::analyserCriteresHospitalisation($consultation, $age);
+        } catch (Exception $e) {}
+
+        // ── Vue ─────────────────────────────────────────────────────────────
         require_once __DIR__ . '/../views/consultations/recapitulatif.php';
     }
 
     /**
-     * Générer l'ordonnance pour impression/PDF
+     * Impression ordonnance pharmacien (système ordonnances_pharmacie)
+     */
+    public function imprimerOrdonnancePharmacien($ordonnance_id) {
+        try {
+            $stmtO = $this->db->prepare(
+                "SELECT op.*, c.patient_id, c.medecin_id,
+                        p.nom AS pat_nom, p.prenom AS pat_prenom, p.date_naissance, p.sexe, p.dossier_numero,
+                        u.nom AS med_nom, u.prenom AS med_prenom
+                 FROM ordonnances_pharmacie op
+                 JOIN consultations c ON c.id = op.consultation_id
+                 JOIN patients p ON p.id = c.patient_id
+                 JOIN users u ON u.id = c.medecin_id
+                 WHERE op.id = ?"
+            );
+            $stmtO->execute([$ordonnance_id]);
+            $ordonnance = $stmtO->fetch(PDO::FETCH_ASSOC);
+
+            if (!$ordonnance) { die("Ordonnance introuvable"); }
+
+            $colsOm = $this->db->query("SHOW COLUMNS FROM ordonnance_medicaments")->fetchAll(PDO::FETCH_COLUMN);
+            $hasNomCol = in_array('nom_medicament', $colsOm);
+            $nomSelect = $hasNomCol
+                ? "COALESCE(om.nom_medicament, m.nom, 'Médicament') AS nom_medicament"
+                : "COALESCE(m.nom, 'Médicament') AS nom_medicament";
+
+            $stmtM = $this->db->prepare(
+                "SELECT om.*, $nomSelect, m.forme, m.dosage
+                 FROM ordonnance_medicaments om
+                 LEFT JOIN medicaments m ON m.id = om.medicament_id
+                 WHERE om.ordonnance_id = ?
+                 ORDER BY om.id ASC"
+            );
+            $stmtM->execute([$ordonnance_id]);
+            $medicaments = $stmtM->fetchAll(PDO::FETCH_ASSOC);
+
+            require_once __DIR__ . '/../views/consultations/print/ordonnance_pharmacien.php';
+        } catch (Exception $e) {
+            die("Erreur : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Générer l'ordonnance pour impression/PDF (ancien système prescriptions)
      */
     public function imprimerOrdonnance($prescription_id) {
         require_once __DIR__ . '/../models/Prescription.php';
@@ -412,29 +646,165 @@ public function formulaire() {
             return;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
         $consultation_id = $input['consultation_id'] ?? null;
-        $decision = $input['decision'] ?? null;
-        $justification = $input['justification'] ?? '';
-        $medecin_id = $_SESSION['user_id'] ?? 1;
+        $decision        = $input['decision']         ?? null;
+        $justification   = $input['justification']    ?? '';
+        $service_dest_id = $input['service_id']       ?? null;
+        $lit_id          = $input['lit_id']            ?? null;
+        $medecin_id      = $_SESSION['user_id']        ?? 1;
 
         if (!$consultation_id || !$decision) {
             echo json_encode(['success' => false, 'message' => 'Données manquantes']);
             return;
         }
 
-        require_once __DIR__ . '/../services/HospitalisationService.php';
-        $success = HospitalisationService::enregistrerDecisionHospitalisation(
-            $consultation_id,
-            $decision,
-            $medecin_id,
-            $justification
-        );
+        $consultation = $this->consultationModel->getById($consultation_id);
+        if (!$consultation) {
+            echo json_encode(['success' => false, 'message' => 'Consultation introuvable']);
+            return;
+        }
+        $patient_id = $consultation['patient_id'];
 
-        if ($success) {
-            echo json_encode(['success' => true, 'message' => 'Décision enregistrée']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'enregistrement']);
+        require_once __DIR__ . '/../services/HospitalisationService.php';
+        HospitalisationService::enregistrerDecisionHospitalisation($consultation_id, $decision, $medecin_id, $justification);
+
+        $redirect_url = BASE_URL . 'dashboard';
+
+        if ($decision === 'HOSPITALISATION') {
+            $medecin_service_id = $_SESSION['service_id'] ?? null;
+            $medecin_service_nom = '';
+            try {
+                $row = $this->db->prepare("SELECT nom FROM services WHERE id = ?");
+                $row->execute([$medecin_service_id]);
+                $medecin_service_nom = strtolower($row->fetchColumn() ?: '');
+            } catch (Exception $e) {}
+
+            $is_consultation_externe = str_contains($medecin_service_nom, 'extern') ||
+                                       str_contains($medecin_service_nom, 'consult');
+
+            if (!$service_dest_id) {
+                if ($is_consultation_externe) {
+                    try {
+                        $rowU = $this->db->query("SELECT id FROM services WHERE LOWER(nom) LIKE '%urgence%' LIMIT 1");
+                        $service_dest_id = $rowU->fetchColumn() ?: null;
+                    } catch (Exception $e) {}
+                } else {
+                    $service_dest_id = $medecin_service_id;
+                }
+            }
+
+            try {
+                $this->db->prepare(
+                    "UPDATE patients SET statut_parcours = 'ATTENTE_HOSPITALISATION',
+                     statut_hosp = 'A_HOSPITALISER', service_id = ? WHERE id = ?"
+                )->execute([$service_dest_id, $patient_id]);
+            } catch (Exception $e) {}
+
+            if ($is_consultation_externe && $service_dest_id) {
+                try {
+                    $stmtChk = $this->db->prepare("SELECT id FROM urgences_patients WHERE patient_id = ? AND statut NOT IN ('TERMINE','SORTI') LIMIT 1");
+                    $stmtChk->execute([$patient_id]);
+                    if (!$stmtChk->fetch()) {
+                        $this->db->prepare(
+                            "INSERT INTO urgences_patients (patient_id, motif_admission, niveau_triage, heure_arrivee, medecin_id, statut)
+                             VALUES (?, ?, '3', NOW(), ?, 'EN_ATTENTE')"
+                        )->execute([$patient_id, $justification ?: 'Transfert consultation externe', $medecin_id]);
+                    }
+                } catch (Exception $e) { error_log("DecisionHosp urgences_patients: " . $e->getMessage()); }
+                $redirect_url = BASE_URL . 'urgences';
+            }
+
+            if ($lit_id && $service_dest_id) {
+                try { HospitalisationService::assignLitNurse($patient_id, $service_dest_id, $lit_id, $medecin_id); }
+                catch (Exception $e) {}
+            }
+
+        } elseif ($decision === 'SORTIE') {
+            try {
+                $this->db->prepare(
+                    "UPDATE patients SET statut_parcours = 'SORTI', statut_hosp = 'AUCUN' WHERE id = ?"
+                )->execute([$patient_id]);
+            } catch (Exception $e) {}
+            $redirect_url = BASE_URL . 'patients/dossier/' . $patient_id;
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Décision enregistrée', 'redirect' => $redirect_url]);
+    }
+
+    /**
+     * Transfert d'un patient vers un autre service avec sélection de lit
+     */
+    public function transfererPatient() {
+        header('Content-Type: application/json');
+
+        $patient_id      = $_POST['patient_id']  ?? null;
+        $service_dest_id = $_POST['service_id']  ?? null;
+        $lit_id          = $_POST['lit_id']       ?? null;
+        $motif_transfert = $_POST['motif']        ?? 'Transfert inter-service';
+        $infirmier_id    = $_SESSION['user_id']   ?? 1;
+
+        if (!$patient_id || !$service_dest_id || !$lit_id) {
+            echo json_encode(['success' => false, 'message' => 'Champs obligatoires manquants (patient, service, lit)']);
+            return;
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Clôturer hospitalisation active si elle existe
+            $stmtH = $this->db->prepare(
+                "SELECT id, lit_id FROM hospitalisations WHERE patient_id = ? AND statut = 'active' LIMIT 1"
+            );
+            $stmtH->execute([$patient_id]);
+            $hosp_actuelle = $stmtH->fetch(PDO::FETCH_ASSOC);
+
+            if ($hosp_actuelle) {
+                $this->db->prepare(
+                    "UPDATE hospitalisations SET statut = 'transfere', date_sortie = NOW(), motif_sortie = ? WHERE id = ?"
+                )->execute([$motif_transfert, $hosp_actuelle['id']]);
+                if ($hosp_actuelle['lit_id']) {
+                    $this->db->prepare(
+                        "UPDATE lits SET statut = 'DISPONIBLE', occupied_by_patient_id = NULL, occupied_since = NULL WHERE id = ?"
+                    )->execute([$hosp_actuelle['lit_id']]);
+                }
+            }
+
+            require_once __DIR__ . '/../services/HospitalisationService.php';
+            $hosp_id = HospitalisationService::assignLitNurse($patient_id, $service_dest_id, $lit_id, $infirmier_id);
+
+            try {
+                $this->db->prepare(
+                    "INSERT INTO transferts_patients (patient_id, service_origine_id, service_destination_id,
+                     lit_destination_id, hospitalisation_id, motif, infirmier_id, date_transfert)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())"
+                )->execute([
+                    $patient_id, $_SESSION['service_id'] ?? null, $service_dest_id,
+                    $lit_id, $hosp_id ?: null, $motif_transfert, $infirmier_id
+                ]);
+            } catch (Exception $e) { error_log("transferts_patients insert ignoré: " . $e->getMessage()); }
+
+            $this->db->prepare(
+                "UPDATE patients SET service_id = ?, statut_parcours = 'HOSPITALISE' WHERE id = ?"
+            )->execute([$service_dest_id, $patient_id]);
+
+            $this->db->commit();
+
+            $stmtInfo = $this->db->prepare(
+                "SELECT l.nom_lit, s.nom as service_nom FROM lits l JOIN services s ON l.service_id = s.id WHERE l.id = ?"
+            );
+            $stmtInfo->execute([$lit_id]);
+            $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Patient transféré vers ' . ($info['service_nom'] ?? 'le service') . ' — Lit ' . ($info['nom_lit'] ?? ''),
+                'redirect' => BASE_URL . 'hospitalisation/dossier/' . $patient_id
+            ]);
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            echo json_encode(['success' => false, 'message' => 'Erreur lors du transfert : ' . $e->getMessage()]);
         }
     }
 

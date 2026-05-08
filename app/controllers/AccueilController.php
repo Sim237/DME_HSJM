@@ -19,13 +19,13 @@ class AccueilController extends UnifiedController {
    public function index() {
     $db = (new Database())->getConnection();
 
-    // On récupère les RDV de la table patient_rdv pour la date du jour
-    $sql = "SELECT p.nom, p.prenom, p.dossier_numero, r.id, r.date_rdv as heure_rdv, r.motif
-            FROM patient_rdv r
+    // On récupère les RDV de la table agenda_medical pour la date du jour
+    $sql = "SELECT p.nom, p.prenom, p.dossier_numero, r.id, r.date_debut as heure_rdv, r.titre as motif
+            FROM agenda_medical r
             JOIN patients p ON r.patient_id = p.id
-            WHERE DATE(r.date_rdv) = CURDATE()
+            WHERE DATE(r.date_debut) = CURDATE()
             AND p.statut_parcours = 'ACCUEIL'
-            ORDER BY r.date_rdv ASC";
+            ORDER BY r.date_debut ASC";
 
     $stmt = $db->query($sql);
     $rdvs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -62,22 +62,31 @@ class AccueilController extends UnifiedController {
             $db->beginTransaction();
 
             // --- 1. GÉNÉRATION DU NUMÉRO DE DOSSIER UNIQUE ---
-            $annee = date('Y');
+            $annee2 = date('y'); // 2 chiffres : 26
+            $prefix = "HSJM$annee2";
             // On compte combien de patients ont été créés cette année
             $stmtCount = $db->prepare("SELECT COUNT(*) as total FROM patients WHERE dossier_numero LIKE ?");
-            $stmtCount->execute(["P-$annee-%"]);
+            $stmtCount->execute(["$prefix%"]);
             $result = $stmtCount->fetch(PDO::FETCH_ASSOC);
             $next_id = $result['total'] + 1;
-            // Formatage final : P-2026-00001
-            $dossier_numero = "P-" . $annee . "-" . str_pad($next_id, 5, '0', STR_PAD_LEFT);
+            // Formatage final : HSJM260001
+            $dossier_numero = $prefix . str_pad($next_id, 4, '0', STR_PAD_LEFT);
 
             // --- 2. INSERTION DU PATIENT ---
+            $allowed_types = ['BON_PRISE_EN_CHARGE','PAYANT_COMPTANT','ASSURANCE'];
+            $type_client = in_array($_POST['type_client'] ?? '', $allowed_types)
+                           ? $_POST['type_client'] : 'PAYANT_COMPTANT';
+
+            $nom_assurance  = ($type_client === 'ASSURANCE') ? trim($_POST['nom_assurance']  ?? '') : null;
+            $numero_assure  = ($type_client === 'ASSURANCE') ? trim($_POST['numero_assure']   ?? '') : null;
+
             $sqlP = "INSERT INTO patients (
                         dossier_numero, nom, prenom, date_naissance, sexe,
                         telephone, adresse, profession, situation_matrimoniale,
                         groupe_sanguin, contact_nom, contact_telephone,
-                        statut_parcours, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACCUEIL', NOW())";
+                        type_client, nom_assurance, numero_assure,
+                        circuit, statut_parcours, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'STANDARD', 'ACCUEIL', NOW())";
 
             $stmtP = $db->prepare($sqlP);
             $stmtP->execute([
@@ -92,7 +101,10 @@ class AccueilController extends UnifiedController {
                 $_POST['situation_matrimoniale'] ?? 'celibataire',
                 $_POST['groupe_sanguin'],
                 $_POST['contact_nom'],
-                $_POST['contact_telephone']
+                $_POST['contact_telephone'],
+                $type_client,
+                $nom_assurance,
+                $numero_assure,
             ]);
 
             $patient_id = $db->lastInsertId();
@@ -104,7 +116,7 @@ class AccueilController extends UnifiedController {
             $num_ordre = $resSeq['last_number'];
 
             // Mise à jour du patient avec son numéro d'ordre et envoi aux PARAMETRES
-            $stmtUpdate = $db->prepare("UPDATE patients SET numero_ordre = ?, statut_parcours = 'PARAMETRES' WHERE id = ?");
+            $stmtUpdate = $db->prepare("UPDATE patients SET numero_ordre = ?, statut_parcours = 'PARAMETRES', date_mise_en_parametres = NOW() WHERE id = ?");
             $stmtUpdate->execute([$num_ordre, $patient_id]);
 
             $db->commit();
@@ -135,7 +147,7 @@ class AccueilController extends UnifiedController {
         $num = $res['last_number'];
 
         // Envoie aux paramètres
-        $stmt = $db->prepare("UPDATE patients SET statut_parcours = 'PARAMETRES', numero_ordre = ? WHERE id = ?");
+        $stmt = $db->prepare("UPDATE patients SET statut_parcours = 'PARAMETRES', numero_ordre = ?, date_mise_en_parametres = NOW() WHERE id = ?");
         $stmt->execute([$num, $patient_id]);
     }
 }

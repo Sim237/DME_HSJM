@@ -1,7 +1,7 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <!-- IMPORTATION DES ICONES ET CSS ADDITIONNELS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.css">
 
 <style>
     :root {
@@ -180,7 +180,11 @@
                                     <td><span class="badge <?= $badgeColor ?> rounded-pill me-2"><?= $prio ?></span><small class="text-muted"><?= htmlspecialchars($p['motif_plainte'] ?? 'Consultation') ?></small></td>
                                     <td><span class="status-badge status-waiting"><i class="bi bi-clock"></i> En attente</span></td>
                                     <td class="text-end">
+                                        <?php if (!empty($isPediatrie)): ?>
+                                        <a href="<?= BASE_URL ?>consultation-ped/formulaire/<?= (int)$p['id'] ?>" class="btn btn-primary btn-sm rounded-pill px-4">Consulter</a>
+                                        <?php else: ?>
                                         <a href="<?= BASE_URL ?>consultation/formulaire?patient_id=<?= $p['id'] ?>&type=EXTERNE&etape=1" class="btn btn-primary btn-sm rounded-pill px-4">Consulter</a>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; else: ?>
@@ -195,7 +199,7 @@
 <div class="med-card">
     <div class="card-header-custom">
         <h5 class="mb-0 fw-bold text-dark">
-            <i class="bi bi-people-fill me-2 text-primary"></i>Mes Patients du Service
+            <i class="bi bi-people-fill me-2 text-primary"></i>Patients Externes
         </h5>
         <a href="<?= BASE_URL ?>patients/mes-patients" class="btn btn-sm btn-outline-primary rounded-pill px-3">
             <i class="bi bi-arrow-right me-1"></i>Voir plus
@@ -376,61 +380,424 @@
 </div>
 <?php endif; ?>
 
-<div class="med-card">
-    <div class="card-header-custom">
-        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-search me-2"></i>Suivi des Bilans Demandés</h5>
+<!-- ══ SUIVI DES BILANS DEMANDÉS ══ -->
+<style>
+    .bilan-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .bilan-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+    .bilan-table { width: 100%; border-collapse: collapse; }
+    .bilan-table thead th { background: #f8fafc; color: #64748b; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; }
+    .bilan-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .15s; }
+    .bilan-table tbody tr:hover { background: #fafbff; }
+    .bilan-table tbody td { padding: 12px 16px; font-size: .88rem; }
+    .bilan-table tbody tr.nouveau { background: #fffbeb; border-left: 3px solid #f59e0b; }
+
+    .badge-labo  { background: #e0f2fe; color: #0369a1; font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .badge-radio { background: #f3e8ff; color: #7c3aed; font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+
+    .statut-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+    .chip-attente  { background:#fef3c7; color:#92400e; }
+    .chip-analyse  { background:#dbeafe; color:#1d4ed8; }
+    .chip-pret     { background:#dcfce7; color:#166534; }
+    .chip-interprete { background:#d1fae5; color:#065f46; }
+    .chip-default  { background:#f1f5f9; color:#475569; }
+
+    .alerte-dot { width:8px; height:8px; background:#ef4444; border-radius:50%; display:inline-block; animation: pulse-alert .8s infinite; }
+    @keyframes pulse-alert { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+    .btn-bilan { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:8px; font-size:.75rem; font-weight:700; border:none; cursor:pointer; transition:all .15s; text-decoration:none; }
+    .btn-b-voir    { background:#e0f2fe; color:#0369a1; } .btn-b-voir:hover    { background:#bae6fd; color:#0369a1; }
+    .btn-b-comment { background:#f0fdf4; color:#166534; } .btn-b-comment:hover { background:#bbf7d0; color:#166534; }
+    .btn-b-rdv     { background:#fef3c7; color:#92400e; } .btn-b-rdv:hover     { background:#fde68a; color:#92400e; }
+    .btn-b-attente { background:#f1f5f9; color:#94a3b8; cursor:default; }
+
+    .patient-chip { font-size:.8rem; font-weight:700; color:#334155; }
+    .patient-ref  { font-size:.72rem; color:#94a3b8; }
+
+    /* Modals */
+    .modal-bilan .modal-content { border-radius:20px; border:0; box-shadow:0 25px 50px rgba(0,0,0,.15); }
+    .modal-bilan .modal-header  { border-bottom:1px solid #f1f5f9; padding:20px 24px; }
+    .modal-bilan .modal-footer  { border-top:1px solid #f1f5f9; padding:16px 24px; }
+    .result-row { background:#f8fafc; border-radius:10px; padding:12px 16px; margin-bottom:8px; }
+    .result-val { font-size:1.4rem; font-weight:900; }
+    .result-val.anormal { color:#dc2626; }
+    .result-val.normal  { color:#16a34a; }
+    .commentaire-item { background:#f8fafc; border-radius:10px; padding:10px 14px; margin-bottom:8px; border-left:3px solid #3b82f6; }
+    .commentaire-item .c-meta { font-size:.72rem; color:#94a3b8; margin-bottom:4px; }
+    .commentaire-item .c-text { font-size:.85rem; color:#334155; }
+</style>
+
+<div class="bilan-card">
+    <div class="bilan-header">
+        <div class="d-flex align-items-center gap-3">
+            <h5 class="mb-0 fw-bold" style="color:#1e293b"><i class="bi bi-clipboard2-pulse me-2 text-primary"></i>Suivi des Bilans Demandés</h5>
+            <?php if (!empty($nouveaux_resultats) && $nouveaux_resultats > 0): ?>
+                <span class="badge bg-danger rounded-pill"><?= $nouveaux_resultats ?> nouveau<?= $nouveaux_resultats > 1 ? 'x' : '' ?></span>
+            <?php endif; ?>
+        </div>
+        <small class="text-muted"><?= count($suivi_bilans ?? []) ?> bilan(s) en cours</small>
     </div>
+
     <div class="table-responsive">
-        <table class="table table-custom align-middle">
+        <table class="bilan-table">
             <thead>
-                <tr class="small text-muted text-uppercase">
+                <tr>
+                    <th>Patient</th>
                     <th>Type</th>
                     <th>Examen / Zone</th>
                     <th>Statut</th>
-                    <th class="text-end">Action</th> <!-- Nouvelle colonne -->
+                    <th>Résultat</th>
+                    <th style="text-align:right">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if(!empty($suivi_bilans)): foreach($suivi_bilans as $b): ?>
-                    <tr>
-                        <td><span class="badge bg-light text-dark border"><?= $b['type'] ?></span></td>
-                        <td><strong><?= htmlspecialchars($b['label']) ?></strong></td>
-                        <td>
-                            <?php if($b['statut'] == 'EN_ATTENTE'): ?>
-                                <span class="text-warning small fw-bold"><i class="bi bi-clock-history"></i> Au service</span>
-                            <?php else: ?>
-                                <span class="text-success small fw-bold"><i class="bi bi-check-circle-fill"></i> Prêt</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="text-end">
-                            <?php if($b['statut'] != 'EN_ATTENTE'): ?>
-                                <?php if($b['type'] == 'Labo'): ?>
-                                    <!-- Bouton pour voir les résultats de Labo (ouvre la liste des patients ou un résumé) -->
-                                    <button class="btn btn-sm btn-primary rounded-pill px-3"
-                                            onclick="alert('Résultats Labo : <?= addslashes($b['label']) ?> disponibles dans le dossier.')">
-                                        <i class="bi bi-eye"></i> Voir
-                                    </button>
-                                <?php else: ?>
-                                    <!-- Bouton pour ouvrir le Viewer Radio directement -->
-                                    <a href="<?= BASE_URL ?>imagerie/viewer/<?= $b['record_id'] ?>"
-                                       class="btn btn-sm btn-primary rounded-pill px-3">
-                                        <i class="bi bi-eye"></i> Voir
-                                    </a>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <button class="btn btn-sm btn-light rounded-pill px-3 disabled" title="En attente de traitement">
-                                    <i class="bi bi-hourglass"></i>
+            <?php if (!empty($suivi_bilans)): foreach ($suivi_bilans as $b):
+                $isDisponible = in_array($b['statut'], ['RESULTATS_PRETS','VALIDES','interprete','termine']);
+                $isNouveau    = $isDisponible && (int)($b['nb_commentaires'] ?? 0) === 0;
+                $isAnormal    = !empty($b['anormal']);
+                $patId = (int)($b['patient_id'] ?? 0);
+                $patNom = strtoupper($b['patient_nom'] ?? '?') . ' ' . ($b['patient_prenom'] ?? '');
+                $patRef = htmlspecialchars($b['dossier_numero'] ?? '');
+
+                // Chip statut
+                $chips = [
+                    'EN_ATTENTE'             => ['chip-attente',   'bi-clock-history',      'En attente'],
+                    'PRELEVEMENTS_EFFECTUES' => ['chip-analyse',   'bi-droplet-half',        'Prélevé'],
+                    'EN_ANALYSE'             => ['chip-analyse',   'bi-gear-wide-connected', 'En analyse'],
+                    'RESULTATS_PRETS'        => ['chip-pret',      'bi-check-circle-fill',   'Résultat prêt'],
+                    'VALIDES'                => ['chip-pret',      'bi-patch-check-fill',    'Validé'],
+                    'en_cours'               => ['chip-analyse',   'bi-gear-wide-connected', 'En cours'],
+                    'termine'                => ['chip-interprete','bi-check-circle-fill',   'Terminé'],
+                    'interprete'             => ['chip-interprete','bi-star-fill',           'Interprété'],
+                ];
+                [$cCls, $cIcon, $cTxt] = $chips[$b['statut']] ?? ['chip-default','bi-dash','Inconnu'];
+            ?>
+                <tr class="<?= $isNouveau ? 'nouveau' : '' ?>">
+                    <td>
+                        <?php if ($isNouveau): ?><span class="alerte-dot me-1"></span><?php endif; ?>
+                        <span class="patient-chip"><?= htmlspecialchars($patNom) ?></span><br>
+                        <span class="patient-ref"><?= $patRef ?></span>
+                    </td>
+                    <td>
+                        <?php if ($b['type'] === 'Labo'): ?>
+                            <span class="badge-labo"><i class="bi bi-droplet me-1"></i>Labo</span>
+                        <?php else: ?>
+                            <span class="badge-radio"><i class="bi bi-radioactive me-1"></i>Radio</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <strong><?= htmlspecialchars($b['label']) ?></strong>
+                        <?php if ((int)($b['nb_commentaires'] ?? 0) > 0): ?>
+                            <br><small style="color:#64748b"><i class="bi bi-chat-text me-1"></i><?= $b['nb_commentaires'] ?> commentaire(s)</small>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <span class="statut-chip <?= $cCls ?>">
+                            <i class="bi <?= $cIcon ?>"></i> <?= $cTxt ?>
+                        </span>
+                    </td>
+                    <td>
+                        <?php if ($isDisponible && $b['type'] === 'Labo' && $b['valeur_numerique'] !== null): ?>
+                            <span class="fw-bold <?= $isAnormal ? 'text-danger' : 'text-success' ?>">
+                                <?= $b['valeur_numerique'] ?> <?= htmlspecialchars($b['unite'] ?? '') ?>
+                            </span>
+                            <?php if ($isAnormal): ?><i class="bi bi-exclamation-triangle-fill text-danger ms-1"></i><?php endif; ?>
+                        <?php elseif ($isDisponible): ?>
+                            <span style="color:#16a34a;font-size:.78rem;font-weight:700"><i class="bi bi-check2 me-1"></i>Disponible</span>
+                        <?php else: ?>
+                            <span style="color:#94a3b8;font-size:.78rem">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td style="text-align:right">
+                        <div class="d-flex gap-1 justify-content-end">
+                        <?php if ($isDisponible): ?>
+                            <?php if ($b['type'] === 'Labo'): ?>
+                                <button class="btn-bilan btn-b-voir"
+                                        onclick="voirResultatsLabo(<?= (int)$b['record_id'] ?>)">
+                                    <i class="bi bi-eye"></i> Voir
                                 </button>
+                            <?php else: ?>
+                                <a href="<?= BASE_URL ?>imagerie/viewer/<?= (int)$b['record_id'] ?>?from=medecin"
+                                   class="btn-bilan btn-b-voir">
+                                    <i class="bi bi-image"></i> Voir
+                                </a>
                             <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; else: ?>
-                    <tr><td colspan="4" class="text-center py-4 text-muted small">Aucun bilan en cours.</td></tr>
-                <?php endif; ?>
+                            <button class="btn-bilan btn-b-comment"
+                                    onclick="ouvrirCommenter(<?= (int)$b['record_id'] ?>, '<?= $b['type'] === 'Labo' ? 'LABO' : 'IMAGERIE' ?>', <?= $patId ?>, '<?= htmlspecialchars(addslashes($patNom), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($b['label']), ENT_QUOTES) ?>')">
+                                <i class="bi bi-chat-text"></i> Commenter
+                            </button>
+                            <button class="btn-bilan btn-b-rdv"
+                                    onclick="ouvrirRdv(<?= $patId ?>, '<?= htmlspecialchars(addslashes($patNom), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($b['label']), ENT_QUOTES) ?>')">
+                                <i class="bi bi-calendar-plus"></i> RDV
+                            </button>
+                        <?php else: ?>
+                            <span class="btn-bilan btn-b-attente"><i class="bi bi-hourglass-split"></i> En attente</span>
+                        <?php endif; ?>
+                        </div>
+                    </td>
+                </tr>
+            <?php endforeach; else: ?>
+                <tr><td colspan="6" class="text-center py-5 text-muted small">
+                    <i class="bi bi-clipboard2 d-block fs-2 mb-2 opacity-25"></i>Aucun bilan en cours.
+                </td></tr>
+            <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- ══ MODAL : RÉSULTATS LABO ══ -->
+<div class="modal fade modal-bilan" id="modalResultatsLabo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-flask me-2 text-primary"></i>Résultats du Bilan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="resultatsLaboBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Fermer</button>
+                <button class="btn btn-success rounded-pill" id="btnCommentDepuisResultat" onclick="commenterDepuisResultat()">
+                    <i class="bi bi-chat-text me-1"></i>Ajouter un commentaire
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL : COMMENTER BILAN ══ -->
+<div class="modal fade modal-bilan" id="modalCommenter" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-chat-text me-2 text-success"></i>Commenter le Résultat</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="c_demande_id">
+                <input type="hidden" id="c_type_bilan">
+                <input type="hidden" id="c_patient_id">
+                <div class="alert alert-light border rounded-3 mb-3 small" id="c_bilan_info"></div>
+                <label class="form-label small fw-bold text-muted text-uppercase">Commentaire / Interprétation clinique</label>
+                <textarea id="c_commentaire" class="form-control" rows="5"
+                          placeholder="Entrez votre analyse des résultats, conduite à tenir, modifications thérapeutiques..."></textarea>
+                <div id="commentaires_existants" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Annuler</button>
+                <button class="btn btn-success rounded-pill fw-bold" onclick="enregistrerCommentaire()">
+                    <i class="bi bi-check2 me-1"></i>Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL : PROGRAMMER RDV ══ -->
+<div class="modal fade modal-bilan" id="modalRdvBilan" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2 text-warning"></i>Programmer un RDV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="rdv_patient_id">
+                <div class="alert alert-warning border-0 rounded-3 mb-3 small" id="rdv_info"></div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Titre du RDV</label>
+                    <input type="text" id="rdv_titre" class="form-control" value="Présentation résultats bilans">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Date et heure</label>
+                        <input type="datetime-local" id="rdv_date_debut" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Fin (optionnel)</label>
+                        <input type="datetime-local" id="rdv_date_fin" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Notes</label>
+                    <textarea id="rdv_notes" class="form-control" rows="2" placeholder="Examens à apporter, instructions..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Annuler</button>
+                <button class="btn btn-warning rounded-pill fw-bold text-dark" onclick="enregistrerRdv()">
+                    <i class="bi bi-calendar-check me-1"></i>Confirmer le RDV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── DONNÉES contexte commentaire depuis modal résultats ──
+let _currentBilanCtx = {};
+
+function voirResultatsLabo(demandeId) {
+    document.getElementById('resultatsLaboBody').innerHTML =
+        '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    new bootstrap.Modal(document.getElementById('modalResultatsLabo')).show();
+
+    fetch('<?= BASE_URL ?>medecin/resultats-bilan?id=' + demandeId)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { document.getElementById('resultatsLaboBody').innerHTML = '<p class="text-danger">Erreur chargement.</p>'; return; }
+
+            let html = '';
+            if (data.examens.length === 0) {
+                html = '<p class="text-muted text-center py-3">Aucun résultat enregistré pour cette demande.</p>';
+            } else {
+                const meta = data.examens[0];
+                html += `<div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded-3">
+                    <i class="bi bi-person-circle fs-4 text-primary"></i>
+                    <div><div class="fw-bold">${meta.patient_nom || ''} ${meta.patient_prenom || ''}</div>
+                    <small class="text-muted">Dr. ${meta.medecin_nom || ''} • Statut : ${meta.statut || ''}</small></div></div>`;
+
+                data.examens.forEach(ex => {
+                    const anormal = ex.anormal == 1;
+                    const valCls  = anormal ? 'anormal' : 'normal';
+                    html += `<div class="result-row">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">${ex.nom_examen || '—'}</div>
+                                <small class="text-muted">${ex.categorie || ''}</small>
+                            </div>
+                            <span class="badge rounded-pill ${anormal ? 'bg-danger' : 'bg-success'}">${anormal ? 'ANORMAL' : 'NORMAL'}</span>
+                        </div>`;
+                    if (ex.valeur_numerique !== null) {
+                        html += `<div class="mt-2 result-val ${valCls}">${ex.valeur_numerique} <small style="font-size:.7em">${ex.unite||''}</small></div>
+                            <small class="text-muted">Norme : ${ex.valeur_normale_min||'?'}–${ex.valeur_normale_max||'?'} ${ex.unite||''}</small>`;
+                    } else if (ex.resultat) {
+                        html += `<p class="mt-2 mb-0 small">${ex.resultat}</p>`;
+                    }
+                    if (ex.interpretation) html += `<p class="mt-1 mb-0 small text-primary"><i class="bi bi-chat-quote me-1"></i>${ex.interpretation}</p>`;
+                    html += '</div>';
+                });
+            }
+
+            // Commentaires existants
+            if (data.commentaires && data.commentaires.length > 0) {
+                html += '<h6 class="fw-bold mt-4 mb-2 text-muted text-uppercase" style="font-size:.72rem;letter-spacing:.8px">Commentaires médecin</h6>';
+                data.commentaires.forEach(c => {
+                    html += `<div class="commentaire-item">
+                        <div class="c-meta">Dr. ${c.medecin_nom} — ${new Date(c.created_at).toLocaleDateString('fr-FR')}</div>
+                        <div class="c-text">${c.commentaire}</div></div>`;
+                });
+            }
+
+            document.getElementById('resultatsLaboBody').innerHTML = html;
+            // Stocker contexte pour commentaire depuis modal résultats
+            _currentBilanCtx = { demandeId: demandeId, type: 'LABO' };
+        });
+}
+
+function commenterDepuisResultat() {
+    bootstrap.Modal.getInstance(document.getElementById('modalResultatsLabo'))?.hide();
+    // On déclenche avec le contexte stocké
+    // Besoin du patient_id – récupéré dans les données fetchées
+    fetch('<?= BASE_URL ?>medecin/resultats-bilan?id=' + _currentBilanCtx.demandeId)
+        .then(r => r.json()).then(data => {
+            if (data.examens && data.examens[0]) {
+                // On n'a pas directement patient_id dans cette réponse → chercher dans le DOM
+                ouvrirCommenter(_currentBilanCtx.demandeId, 'LABO', 0,
+                    (data.examens[0].patient_nom || '') + ' ' + (data.examens[0].patient_prenom || ''),
+                    data.examens[0].nom_examen || 'Bilan');
+            }
+        });
+}
+
+function ouvrirCommenter(demandeId, typeBilan, patientId, patNom, examNom) {
+    document.getElementById('c_demande_id').value = demandeId;
+    document.getElementById('c_type_bilan').value = typeBilan;
+    document.getElementById('c_patient_id').value = patientId;
+    document.getElementById('c_commentaire').value = '';
+    document.getElementById('c_bilan_info').innerHTML =
+        `<strong>${patNom}</strong> — <em>${examNom}</em>`;
+
+    // Charger les commentaires existants
+    fetch('<?= BASE_URL ?>medecin/resultats-bilan?id=' + demandeId)
+        .then(r => r.json()).then(data => {
+            let html = '';
+            if (data.commentaires && data.commentaires.length > 0) {
+                html = '<h6 class="small text-muted fw-bold text-uppercase mb-2" style="letter-spacing:.7px">Commentaires précédents</h6>';
+                data.commentaires.forEach(c => {
+                    html += `<div class="commentaire-item">
+                        <div class="c-meta">Dr. ${c.medecin_nom} — ${new Date(c.created_at).toLocaleDateString('fr-FR')}</div>
+                        <div class="c-text">${c.commentaire}</div></div>`;
+                });
+            }
+            document.getElementById('commentaires_existants').innerHTML = html;
+        });
+
+    new bootstrap.Modal(document.getElementById('modalCommenter')).show();
+}
+
+function enregistrerCommentaire() {
+    const fd = new FormData();
+    fd.append('demande_id',  document.getElementById('c_demande_id').value);
+    fd.append('type_bilan',  document.getElementById('c_type_bilan').value);
+    fd.append('patient_id',  document.getElementById('c_patient_id').value);
+    fd.append('commentaire', document.getElementById('c_commentaire').value.trim());
+
+    if (!fd.get('commentaire')) { alert('Veuillez saisir un commentaire.'); return; }
+
+    fetch('<?= BASE_URL ?>medecin/commenter-bilan', { method:'POST', body:fd })
+        .then(r => r.json()).then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalCommenter'))?.hide();
+                // Toast + reload léger
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#16a34a;color:white;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.2)';
+                toast.innerHTML = '<i class="bi bi-check2-circle me-2"></i>Commentaire enregistré.';
+                document.body.appendChild(toast);
+                setTimeout(() => { toast.remove(); location.reload(); }, 2000);
+            } else {
+                alert('Erreur : ' + (data.message || 'Inconnue'));
+            }
+        });
+}
+
+function ouvrirRdv(patientId, patNom, examNom) {
+    document.getElementById('rdv_patient_id').value = patientId;
+    document.getElementById('rdv_info').innerHTML =
+        `<i class="bi bi-person-fill me-2"></i><strong>${patNom}</strong> — ${examNom}`;
+    document.getElementById('rdv_titre').value = `Présentation résultats — ${examNom}`;
+    // Pré-remplir date = demain à 9h
+    const d = new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0);
+    document.getElementById('rdv_date_debut').value = d.toISOString().slice(0,16);
+    new bootstrap.Modal(document.getElementById('modalRdvBilan')).show();
+}
+
+function enregistrerRdv() {
+    const fd = new FormData();
+    fd.append('patient_id',  document.getElementById('rdv_patient_id').value);
+    fd.append('titre',       document.getElementById('rdv_titre').value);
+    fd.append('date_debut',  document.getElementById('rdv_date_debut').value);
+    fd.append('date_fin',    document.getElementById('rdv_date_fin').value);
+    fd.append('notes',       document.getElementById('rdv_notes').value);
+
+    if (!fd.get('date_debut')) { alert('Veuillez choisir une date.'); return; }
+
+    fetch('<?= BASE_URL ?>medecin/programmer-rdv-bilan', { method:'POST', body:fd })
+        .then(r => r.json()).then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalRdvBilan'))?.hide();
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#d97706;color:white;padding:12px 20px;border-radius:12px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.2)';
+                toast.innerHTML = '<i class="bi bi-calendar-check me-2"></i>RDV programmé avec succès !';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            } else {
+                alert('Erreur : ' + (data.message || 'Inconnue'));
+            }
+        });
+}
+</script>
 
 <!-- SECTION : DOSSIERS PARTAGÉS (Dashboard Médecin) -->
 <div class="med-card shadow-sm border-0">

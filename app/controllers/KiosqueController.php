@@ -47,9 +47,10 @@ class KiosqueController {
         $sql = "SELECT k.*, p.nom, p.prenom, r.date_rdv
                 FROM kiosque_checkins k
                 JOIN patients p ON k.patient_id = p.id
-                LEFT JOIN patient_rdv r ON k.rdv_id = r.id
+                LEFT JOIN agenda_medical r ON k.rdv_id = r.id
                 WHERE DATE(k.heure_checkin) = CURDATE() AND k.statut != 'APPELE'
                 ORDER BY k.heure_checkin";
+        // Note: k.rdv_id links to agenda_medical.id
         $stmt = $this->db->query($sql);
         $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -90,8 +91,8 @@ class KiosqueController {
     }
     
     private function findRdvDuJour($patientId) {
-        $sql = "SELECT id FROM patient_rdv 
-                WHERE patient_id = ? AND DATE(date_rdv) = CURDATE() AND statut = 'CONFIRME'
+        $sql = "SELECT id FROM agenda_medical
+                WHERE patient_id = ? AND DATE(date_debut) = CURDATE() AND statut = 'CONFIRME'
                 LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$patientId]);

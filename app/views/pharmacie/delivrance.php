@@ -8,12 +8,11 @@ $database = new Database();
 $db = $database->getConnection();
 
 $stmt = $db->prepare("
-    SELECT o.*, c.patient_id, p.nom, p.prenom, p.dossier_numero,
+    SELECT o.*, o.patient_id, p.nom, p.prenom, p.dossier_numero,
            u.nom as medecin_nom, u.prenom as medecin_prenom
-    FROM ordonnances_pharmacie o
-    JOIN consultations c ON o.consultation_id = c.id
-    JOIN patients p ON c.patient_id = p.id
-    JOIN users u ON c.medecin_id = u.id
+    FROM prescriptions o
+    JOIN patients p ON o.patient_id = p.id
+    LEFT JOIN users u ON o.medecin_id = u.id
     WHERE o.id = ?
 ");
 $stmt->execute([$ordonnance_id]);
@@ -21,10 +20,10 @@ $ordonnance = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Récupérer médicaments
 $stmt = $db->prepare("
-    SELECT om.*, m.nom, m.quantite as stock_actuel, m.unite
-    FROM ordonnance_medicaments om
-    JOIN medicaments m ON om.medicament_id = m.id
-    WHERE om.ordonnance_id = ?
+    SELECT lp.*, m.nom, m.quantite as stock_actuel, m.unite
+    FROM lignes_prescription lp
+    LEFT JOIN medicaments m ON lp.medicament_id = m.id
+    WHERE lp.prescription_id = ?
 ");
 $stmt->execute([$ordonnance_id]);
 $medicaments = $stmt->fetchAll(PDO::FETCH_ASSOC);

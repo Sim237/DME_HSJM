@@ -79,6 +79,16 @@ switch(true) {
         (new DashboardController())->getEvolutionData();
         break;
 
+    case ($request == 'dashboard/kpi-directeur'): // API temps réel pour le dashboard Directeur
+        require_once 'app/controllers/DashboardController.php';
+        (new DashboardController())->kpiDirecteur();
+        break;
+
+    case ($request == 'medecin/resultats-bilan'): // API AJAX résultats bilan labo
+        require_once 'app/controllers/DashboardController.php';
+        (new DashboardController())->resultatsBilan();
+        break;
+
     /* ============================================================
        3. GESTION DES PATIENTS (DME)
        ============================================================ */
@@ -105,6 +115,11 @@ switch(true) {
     case (preg_match('/patients\/mesures\/(\d+)/', $request, $matches)):
         require_once 'app/controllers/PatientController.php';
         (new PatientController())->mesures($matches[1]);
+        break;
+
+    case ($request == 'patients/save-constantes'):
+        require_once 'app/controllers/PatientController.php';
+        (new PatientController())->saveConstantes();
         break;
 
     case ($request == 'patients/save-mesures'):
@@ -160,6 +175,16 @@ switch(true) {
         (new UrgencesController())->transferer();
         break;
 
+    case ($request == 'urgences/valider-hospitalisation'):
+        require_once 'app/controllers/UrgencesController.php';
+        (new UrgencesController())->validerHospitalisation();
+        break;
+
+    case ($request == 'urgences/liberer-lit'):
+        require_once 'app/controllers/UrgencesController.php';
+        (new UrgencesController())->libererLit();
+        break;
+
     /* ============================================================
        5. CONSULTATIONS (WORKFLOW 7 ÉTAPES)
        ============================================================ */
@@ -176,6 +201,29 @@ switch(true) {
     case ($request == 'consultation/commencer'):
         require_once 'app/controllers/ConsultationController.php';
         (new ConsultationController())->commencerConsultation();
+        break;
+
+    /* ============================================================
+       CONSULTATIONS PÉDIATRIQUES
+       ============================================================ */
+    case (preg_match('/consultation-ped\/formulaire\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/PediatricConsultationController.php';
+        (new PediatricConsultationController())->formulaire((int)$matches[1]);
+        break;
+
+    case ($request == 'consultation-ped/sauvegarder-etape'):
+        require_once 'app/controllers/PediatricConsultationController.php';
+        (new PediatricConsultationController())->sauvegarderEtape();
+        break;
+
+    case (preg_match('/consultation-ped\/voir\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/PediatricConsultationController.php';
+        (new PediatricConsultationController())->voir((int)$matches[1]);
+        break;
+
+    case (preg_match('/consultation-ped\/liste\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/PediatricConsultationController.php';
+        (new PediatricConsultationController())->liste((int)$matches[1]);
         break;
 
     case ($request == 'consultation/formulaire'):
@@ -198,11 +246,25 @@ switch(true) {
         (new ConsultationController())->searchCim10();
         break;
 
-    // Dans votre fichier index.php, ajoutez ce cas :
-case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
-    require_once 'app/controllers/ConsultationController.php';
-    (new ConsultationController())->cloturer($matches[1]);
-    break;
+    case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/ConsultationController.php';
+        (new ConsultationController())->cloturer($matches[1]);
+        break;
+
+    case ($request == 'consultation/decision-hospitalisation'):
+        require_once 'app/controllers/ConsultationController.php';
+        (new ConsultationController())->decisionHospitalisation();
+        break;
+
+    case ($request == 'consultation/transferer-patient'):
+        require_once 'app/controllers/ConsultationController.php';
+        (new ConsultationController())->transfererPatient();
+        break;
+
+    case (preg_match('/consultation\/imprimer-ordonnance\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/ConsultationController.php';
+        (new ConsultationController())->imprimerOrdonnancePharmacien($matches[1]);
+        break;
 
     case ($request == 'consultation/confirmer-diagnostic'):
         require_once 'app/controllers/DashboardController.php';
@@ -257,6 +319,21 @@ case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
         (new HospitalisationController())->surveillanceIntensive($matches[1]);
         break;
 
+    case ($request == 'hospitalisation/save-si'):
+        require_once 'app/controllers/HospitalisationController.php';
+        (new HospitalisationController())->saveSI();
+        break;
+
+    case (preg_match('/hospitalisation\/fiche-transfusionnelle\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/HospitalisationController.php';
+        (new HospitalisationController())->ficheTransfusionnelle($matches[1]);
+        break;
+
+    case ($request == 'hospitalisation/save-transfusion'):
+        require_once 'app/controllers/HospitalisationController.php';
+        (new HospitalisationController())->saveTransfusion();
+        break;
+
     /* ============================================================
        7. LITS & BANQUE DE SANG
        ============================================================ */
@@ -303,6 +380,59 @@ case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
     case ($request == 'banque-sang/delivrer'):
         require_once 'app/controllers/BloodBankController.php';
         (new BloodBankController())->deliverRequest();
+        break;
+
+    /* ============================================================
+       PRESCRIPTIONS / ORDONNANCES
+       ============================================================ */
+    case ($request == 'prescription'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->index();
+        break;
+
+    case ($request == 'prescription/create'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->create();
+        break;
+
+    case ($request == 'prescription/save'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->save();
+        break;
+
+    case ($request == 'prescription/print'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->print();
+        break;
+
+    case ($request == 'prescription/signer-et-envoyer'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->signerEtEnvoyer();
+        break;
+
+    case ($request == 'prescription/archives'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->archives();
+        break;
+
+    case ($request == 'prescription/verify'):
+        require_once 'app/controllers/PrescriptionController.php';
+        require_once 'app/services/SignatureService.php';
+        header('Content-Type: application/json');
+        $id   = (int)($_POST['id']   ?? 0);
+        $hash = trim($_POST['hash']  ?? '');
+        $valid = $id && $hash ? (new SignatureService())->verifyHash('ORDONNANCE', $id, $hash) : false;
+        echo json_encode(['valid' => $valid]);
+        break;
+
+    case ($request == 'prescription/check-stock'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->checkStock();
+        break;
+
+    case ($request == 'prescription/history'):
+        require_once 'app/controllers/PrescriptionController.php';
+        (new PrescriptionController())->history();
         break;
 
     /* ============================================================
@@ -369,6 +499,21 @@ case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
     case ($request == 'pharmacie/search-medicaments'):
         require_once 'app/controllers/PharmacieController.php';
         (new PharmacieController())->searchMedicaments();
+        break;
+
+    case ($request == 'pharmacie/import-stock'):
+        require_once 'app/controllers/PharmacieController.php';
+        (new PharmacieController())->importStock();
+        break;
+
+    case ($request == 'pharmacie/download-template'):
+        require_once 'app/controllers/PharmacieController.php';
+        (new PharmacieController())->downloadTemplate();
+        break;
+
+    case ($request == 'pharmacie/approvisionnement'):
+        require_once 'app/controllers/PharmacieController.php';
+        (new PharmacieController())->approvisionnement();
         break;
 
     /* ============================================================
@@ -440,6 +585,16 @@ case (preg_match('/consultation\/cloturer\/(\d+)/', $request, $matches)):
         (new UserController())->index();
         break;
 
+    case ($request == 'utilisateurs/save'):
+        require_once 'app/controllers/UserController.php';
+        (new UserController())->save();
+        break;
+
+    case ($request == 'utilisateurs/delete'):
+        require_once 'app/controllers/UserController.php';
+        (new UserController())->delete();
+        break;
+
     // MODULE ACCUEIL
 case ($request == 'accueil'):
     require_once 'app/controllers/AccueilController.php';
@@ -449,6 +604,68 @@ case ($request == 'accueil'):
 case ($request == 'accueil/enregistrer-patient'):
     require_once 'app/controllers/AccueilController.php';
     (new AccueilController())->enregistrerPatient();
+    break;
+
+case (preg_match('/accueil\/get-patient\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/AccueilController.php';
+    (new AccueilController())->getPatient($matches[1]);
+    break;
+
+case ($request == 'accueil/nouvelle-visite'):
+    require_once 'app/controllers/AccueilController.php';
+    (new AccueilController())->nouvelleVisite();
+    break;
+
+case (preg_match('/accueil\/commencer-visite\/(\d+)/', $request, $matches)):
+    require_once 'app/controllers/AccueilController.php';
+    (new AccueilController())->commencerVisite($matches[1]);
+    break;
+
+// MODULE SPÉCIALISTES
+case ($request == 'specialiste/get-specialistes'):
+    require_once 'app/controllers/SpecialisteController.php';
+    (new SpecialisteController())->getSpecialistes();
+    break;
+
+case ($request == 'specialiste/check-quota'):
+    require_once 'app/controllers/SpecialisteController.php';
+    (new SpecialisteController())->checkQuota();
+    break;
+
+case ($request == 'specialiste/store-rdv-accueil'):
+    require_once 'app/controllers/SpecialisteController.php';
+    (new SpecialisteController())->storeRdvAccueil();
+    break;
+
+// MODULE ACCUEIL PHP — SUPPRIMÉ : les patients PHP passent désormais par l'accueil standard
+// Redirection de sécurité pour les anciens liens éventuels
+case ($request == 'accueil-php'):
+case ($request == 'accueil-php/enregistrer-patient'):
+case (preg_match('/accueil-php\/commencer-visite\/(\d+)/', $request, $matches)):
+    header('Location: ' . BASE_URL . 'accueil');
+    exit;
+
+// MODULE PARAMÈTRES PHP
+case ($request == 'parametres-php'):
+    require_once 'app/controllers/ParametresPhpController.php';
+    (new ParametresPhpController())->index();
+    break;
+
+case ($request == 'parametres-php/save'):
+    require_once 'app/controllers/ParametresPhpController.php';
+    (new ParametresPhpController())->save();
+    break;
+
+// MODULE CONSULTATION EXTERNE PHP
+case ($request == 'consultation-ext-php'):
+    require_once 'app/controllers/ConsultationExtPhpController.php';
+    (new ConsultationExtPhpController())->index();
+    break;
+
+// DIRECTEUR — ANALYSE PATIENTS
+case ($request == 'directeur/patients'):
+    require_once 'app/controllers/DashboardController.php';
+    (new DashboardController())->directeurPatients();
     break;
 
 // MODULE PARAMÈTRES (Commun pour B1 et B2, la distinction se fait par la session)
@@ -462,17 +679,102 @@ case ($request == 'parametres/save'):
     (new ParametresController())->save();
     break;
 
-/* ============================================================
-       PERSONNEL ET UTILISATEURS
+    /* ============================================================
+       ADMINISTRATION (Services, Chambres, Lits, Permissions)
        ============================================================ */
-    case ($request == 'utilisateurs'):
-        require_once 'app/controllers/UserController.php';
-        (new UserController())->index();
+    case ($request == 'admin/services'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->services();
         break;
 
-    case ($request == 'utilisateurs/save'):
-        require_once 'app/controllers/UserController.php';
-        (new UserController())->save();
+    case ($request == 'admin/save-service'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->saveService();
+        break;
+
+    case (preg_match('/admin\/delete-service\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->deleteService($matches[1]);
+        break;
+
+    case ($request == 'admin/lits'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->lits();
+        break;
+
+    case ($request == 'admin/save-chambre'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->saveChambre();
+        break;
+
+    case (preg_match('/admin\/delete-chambre\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->deleteChambre($matches[1]);
+        break;
+
+    case ($request == 'admin/save-lit'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->saveLit();
+        break;
+
+    case (preg_match('/admin\/delete-lit\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->deleteLit($matches[1]);
+        break;
+
+    case ($request == 'admin/permissions'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->permissions();
+        break;
+
+    case ($request == 'admin/save-permission'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->savePermission();
+        break;
+
+    case ($request == 'admin/logs'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->logs();
+        break;
+
+    case ($request == 'admin/pharmacie'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->pharmacie();
+        break;
+
+    case ($request == 'admin/save-medicament'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->saveMedicament();
+        break;
+
+    case ($request == 'admin/delete-medicament'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->deleteMedicament();
+        break;
+
+    case ($request == 'admin/laboratoire'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->laboratoire();
+        break;
+
+    case ($request == 'admin/save-examen'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->saveExamen();
+        break;
+
+    case (preg_match('/admin\/delete-examen\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->deleteExamen($matches[1]);
+        break;
+
+    case ($request == 'admin/save-categorie'):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->saveCategorie();
+        break;
+
+    case (preg_match('/admin\/delete-categorie\/(\d+)/', $request, $matches)):
+        require_once 'app/controllers/AdminController.php';
+        (new AdminController())->deleteCategorie($matches[1]);
         break;
 
     case ($request == 'profil'):
@@ -511,6 +813,42 @@ case ($request == 'hospitalisation/valider-execution'):
     (new HospitalisationController())->validerExecution();
     break;
 
+case ($request == 'hospitalisation/cocher-soin'):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->cocherSoin();
+    break;
+
+case ($request == 'hospitalisation/rayer-soin'):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->rayerSoin();
+    break;
+
+
+    // --- ROUTES MAJOR (INFIRMIER MAJOR) ---
+case ($request == 'major/dashboard'):
+    require_once 'app/controllers/MajorController.php';
+    (new MajorController())->dashboard();
+    break;
+
+case ($request == 'hospitalisation/update-patient'):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->updatePatient();
+    break;
+
+case ($request == 'major/marquer-retard'):
+    require_once 'app/controllers/MajorController.php';
+    (new MajorController())->marquerRetard();
+    break;
+
+case ($request == 'major/reassigner-soin'):
+    require_once 'app/controllers/MajorController.php';
+    (new MajorController())->reassignerSoin();
+    break;
+
+case ($request == 'major/annoter-soin'):
+    require_once 'app/controllers/MajorController.php';
+    (new MajorController())->annoterSoin();
+    break;
 
     // --- ROUTES POUR L'AGENDA MÉDICAL ---
 case ($request == 'agenda'):
@@ -580,6 +918,11 @@ case ($request == 'imagerie/saveThumbnail'):
     (new ImagerieController())->saveThumbnail();
     break;
 
+case ($request == 'imagerie/creer-demande-consultation'):
+    require_once 'app/controllers/ImagerieController.php';
+    (new ImagerieController())->creerDemandeConsultation();
+    break;
+
 case ($request == 'bilan/save'):
     require_once 'app/controllers/BilanController.php';
     (new BilanController())->save();
@@ -609,6 +952,11 @@ case ($request == 'hospitalisation/add-soin'):
 case ($request == 'hospitalisation/add-constantes'):
     require_once 'app/controllers/HospitalisationController.php';
     (new HospitalisationController())->ajouterConstantes();
+    break;
+
+case ($request == 'hospitalisation/prescrire-medicament'):
+    require_once 'app/controllers/HospitalisationController.php';
+    (new HospitalisationController())->prescrireMedicament();
     break;
     /* ============================================================
        DEFAUT : 404

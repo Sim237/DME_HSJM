@@ -9,7 +9,7 @@ include __DIR__ . '/../../layouts/header.php';
 
 <div class="container-fluid">
     <div class="row">
-        <?php include __DIR__ . '/../../layouts/sidebar.php'; ?>
+
 
        <main class="col-12 px-md-4 consultation-form" style="margin-left: 0 !important;">
 
@@ -31,21 +31,8 @@ include __DIR__ . '/../../layouts/header.php';
                         <h5 class="mb-0"><i class="fas fa-diagnoses me-2"></i> HYPOTHÈSES DIAGNOSTIQUES</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Hypothèses diagnostiques -->
-                        <div class="mb-4">
-                            <label for="hypotheses_diagnostiques" class="form-label fw-bold">
-                                <i class="fas fa-lightbulb text-warning"></i> Hypothèses Diagnostiques <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control"
-                                      id="hypotheses_diagnostiques"
-                                      name="hypotheses_diagnostiques"
-                                      rows="5"
-                                      required
-                                      placeholder="Listez les différentes hypothèses diagnostiques envisagées..."><?php echo htmlspecialchars($consultation['hypotheses_diagnostiques'] ?? ''); ?></textarea>
-                            <small class="form-text text-muted">
-                                Basé sur l'anamnèse et l'examen physique
-                            </small>
-                        </div>
+                        <!-- Champ caché pour maintenir la compatibilité BDD -->
+                        <input type="hidden" name="hypotheses_diagnostiques" value="<?php echo htmlspecialchars($consultation['hypotheses_diagnostiques'] ?? ''); ?>">
 
                         <!-- Remplacer le bloc "Diagnostic Principal" par ceci -->
 <div class="mb-4">

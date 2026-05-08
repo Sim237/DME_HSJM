@@ -17,16 +17,21 @@ $history        = $history        ?? [];
 $comptes_rendus = $comptes_rendus ?? [];
 $prescriptions  = $prescriptions  ?? [];
 $bilans_demandes = $bilans_demandes ?? [];
+$bilans_imagerie = $bilans_imagerie ?? [];
 
 // Calcul de l'âge
 $age = 'N/A';
+$ageNumerique = 999; // adulte par défaut
 if (!empty($patient['date_naissance'])) {
-    $age = date_diff(date_create($patient['date_naissance']), date_create('today'))->y . ' ans';
+    $diff = date_diff(date_create($patient['date_naissance']), date_create('today'));
+    $ageNumerique = (int)$diff->y;
+    $age = $ageNumerique . ' ans';
 }
+$isEnfant = ($ageNumerique <= 15);
 ?>
 
 <!-- IMPORT DES ICONES BOOTSTRAP -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!--<link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.css">-->
 
 <!-- STYLE MODERNE DÉDIÉ AU DOSSIER -->
 <style>
@@ -77,7 +82,7 @@ if (!empty($patient['date_naissance'])) {
             <p class="text-muted mb-0">Patient : <?= htmlspecialchars($patient['nom'] . ' ' . $patient['prenom']) ?></p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <a href="<?= BASE_URL ?>dashboard" class="btn btn-outline-secondary btn-sm shadow-sm"><i class="bi bi-arrow-left"></i> Retour</a>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm shadow-sm"><i class="bi bi-arrow-left"></i> Retour</a>
 
             <form action="<?= BASE_URL ?>consultation/commencer" method="POST" style="display: inline;">
                 <input type="hidden" name="patient_id" value="<?= $patient['id'] ?>">
@@ -124,7 +129,10 @@ if (!empty($patient['date_naissance'])) {
                     <div class="info-row"><div class="info-icon"><i class="bi bi-gender-ambiguous"></i></div><div><small class="text-muted d-block">Sexe</small><strong><?= ($patient['sexe'] ?? '') === 'M' ? 'Masculin' : 'Féminin' ?></strong></div></div>
                     <div class="info-row"><div class="info-icon text-danger"><i class="bi bi-droplet-fill"></i></div><div><small class="text-muted d-block">Groupe Sanguin</small><strong class="text-danger"><?= $patient['groupe_sanguin'] ?: 'Inconnu' ?></strong></div></div>
                     <div class="d-grid mt-4">
-                        <a href="<?= BASE_URL ?>patients/mesures/<?= $patient['id'] ?>" class="btn btn-primary rounded-pill btn-sm shadow-sm"><i class="bi bi-activity"></i> Saisir Constantes</a>
+                        <button type="button" class="btn btn-primary rounded-pill btn-sm shadow-sm"
+                                data-bs-toggle="modal" data-bs-target="#modalConstantes">
+                            <i class="bi bi-activity"></i> Saisir Constantes
+                        </button>
                     </div>
                 </div>
             </div>
@@ -138,13 +146,13 @@ if (!empty($patient['date_naissance'])) {
                 <div class="col-md-3 col-6">
                     <div class="vital-box temp shadow-sm">
                         <span class="vital-label">Température</span>
-                        <div class="vital-value text-danger"><?= $parametres['temperature'] ?? '--' ?> <small>°C</small></div>
+                        <div class="vital-value text-danger" id="vt-temp"><?= $parametres['temperature'] ?? '--' ?> <small>°C</small></div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="vital-box tension shadow-sm">
                         <span class="vital-label">Tension</span>
-                        <div class="vital-value text-primary">
+                        <div class="vital-value text-primary" id="vt-tension">
                             <?= (isset($parametres['pression_arterielle_systolique']) && $parametres['pression_arterielle_systolique'] > 0) ? $parametres['pression_arterielle_systolique'].'/'.$parametres['pression_arterielle_diastolique'] : '--/--' ?>
                             <small class="fs-6">mmHg</small>
                         </div>
@@ -153,13 +161,13 @@ if (!empty($patient['date_naissance'])) {
                 <div class="col-md-3 col-6">
                     <div class="vital-box pouls shadow-sm">
                         <span class="vital-label">Pouls</span>
-                        <div class="vital-value text-success"><?= $parametres['frequence_cardiaque'] ?? '--' ?> <small>bpm</small></div>
+                        <div class="vital-value text-success" id="vt-pouls"><?= $parametres['frequence_cardiaque'] ?? '--' ?> <small>bpm</small></div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="vital-box poids shadow-sm">
                         <span class="vital-label">Poids</span>
-                        <div class="vital-value text-dark"><?= $parametres['poids'] ?? '--' ?> <small>kg</small></div>
+                        <div class="vital-value text-dark" id="vt-poids"><?= $parametres['poids'] ?? '--' ?> <small>kg</small></div>
                     </div>
                 </div>
             </div>
@@ -181,6 +189,14 @@ if (!empty($patient['date_naissance'])) {
                         <i class="bi bi-flask me-2"></i>Bilans
                         <?php if (!empty($bilans_demandes)): ?>
                             <span class="badge bg-info text-white rounded-pill ms-1"><?= count($bilans_demandes) ?></span>
+                        <?php endif; ?>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-imagerie" type="button">
+                        <i class="bi bi-image me-2"></i>Radiologie
+                        <?php if (!empty($bilans_imagerie)): ?>
+                            <span class="badge bg-dark rounded-pill ms-1"><?= count($bilans_imagerie) ?></span>
                         <?php endif; ?>
                     </button>
                 </li>
@@ -381,6 +397,77 @@ if (!empty($patient['date_naissance'])) {
                         <div class="text-center py-5 text-muted">
                             <i class="bi bi-flask fs-1 d-block mb-2 opacity-25"></i>
                             Aucun bilan demandé pour ce patient.
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- CONTENU RADIOLOGIE / IMAGERIE -->
+                <div class="tab-pane fade" id="tab-imagerie">
+                    <?php if (!empty($bilans_imagerie)): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border-0">
+                                <thead class="bg-light">
+                                    <tr class="small text-uppercase text-muted">
+                                        <th>Examen</th>
+                                        <th>Demandé le</th>
+                                        <th>Médecin</th>
+                                        <th class="text-center">Urgence</th>
+                                        <th class="text-center">Statut</th>
+                                        <th>Interprétation / Résultat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($bilans_imagerie as $img): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold"><?= htmlspecialchars($img['nom_examen'] ?? '—') ?></div>
+                                                <?php if (!empty($img['description'])): ?>
+                                                    <small class="text-muted"><?= htmlspecialchars(substr($img['description'], 0, 60)) ?></small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><small><?= date('d/m/Y', strtotime($img['date_creation'])) ?></small></td>
+                                            <td><small>Dr. <?= htmlspecialchars(($img['medecin_nom'] ?? '') . ' ' . ($img['medecin_prenom'] ?? '')) ?></small></td>
+                                            <td class="text-center">
+                                                <?php if (($img['urgence'] ?? '') === 'URGENT'): ?>
+                                                    <span class="badge rounded-pill bg-danger">Urgent 🚨</span>
+                                                <?php else: ?>
+                                                    <span class="badge rounded-pill bg-secondary">Normal</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php
+                                                    $imgStatuts = [
+                                                        'EN_ATTENTE'    => ['bg-warning text-dark', 'En attente'],
+                                                        'EN_COURS'      => ['bg-info text-white',   'En cours'],
+                                                        'REALISE'       => ['bg-primary',            'Réalisé'],
+                                                        'INTERPRETE'    => ['bg-success',            'Interprété'],
+                                                        'VALIDE'        => ['bg-success',            'Validé'],
+                                                    ];
+                                                    [$icls, $itxt] = $imgStatuts[$img['statut'] ?? ''] ?? ['bg-secondary', $img['statut'] ?? '—'];
+                                                ?>
+                                                <span class="badge rounded-pill <?= $icls ?>"><?= $itxt ?></span>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($img['interpretation'])): ?>
+                                                    <small><?= htmlspecialchars(substr($img['interpretation'], 0, 100)) ?></small>
+                                                <?php elseif (!empty($img['resultat'])): ?>
+                                                    <small><?= htmlspecialchars(substr($img['resultat'], 0, 100)) ?></small>
+                                                <?php else: ?>
+                                                    <small class="text-muted">En attente de résultat</small>
+                                                <?php endif; ?>
+                                                <?php if (!empty($img['fichier_preview'])): ?>
+                                                    <br><a href="<?= BASE_URL ?>imagerie/viewer/<?= $img['id'] ?>" target="_blank" class="btn btn-xs btn-outline-dark mt-1 px-2 py-0 small rounded-pill"><i class="bi bi-eye me-1"></i>Voir</a>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-image fs-1 d-block mb-2 opacity-25"></i>
+                            Aucun bilan de radiologie/imagerie pour ce patient.
                         </div>
                     <?php endif; ?>
                 </div>
@@ -797,6 +884,260 @@ function loadUsers() {
         });
     }
 }
+</script>
+
+<!-- ══ MODAL CONSTANTES (Adaptatif Enfant / Adulte) ═══════════════════════ -->
+<?php
+$cstGradient = $isEnfant
+    ? 'linear-gradient(135deg,#059669,#10b981)'   // vert pédiatrie
+    : 'linear-gradient(135deg,#0d6efd,#0099ff)';  // bleu adulte
+$cstBtnClass = $isEnfant ? 'btn-success' : 'btn-primary';
+$cstIcon     = $isEnfant ? 'bi-balloon-heart'     : 'bi-activity';
+$cstLabel    = $isEnfant
+    ? 'Pédiatrie &nbsp;<span class="badge bg-white text-success fw-bold">' . $ageNumerique . ' ans</span>'
+    : 'Adulte &nbsp;<span class="badge bg-white text-primary fw-bold">' . $ageNumerique . ' ans</span>';
+?>
+<div class="modal fade" id="modalConstantes" tabindex="-1" aria-labelledby="modalConstantesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered <?= $isEnfant ? 'modal-md' : 'modal-lg' ?>">
+    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+      <!-- En-tête coloré selon profil -->
+      <div class="modal-header text-white py-3" style="background:<?= $cstGradient ?>;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0" id="modalConstantesLabel">
+            <i class="bi <?= $cstIcon ?> me-2"></i>Constantes
+            — <?= $cstLabel ?>
+          </h5>
+          <small class="opacity-75">
+            <?= htmlspecialchars($patient['nom'] . ' ' . $patient['prenom']) ?>
+            &nbsp;·&nbsp;<?= htmlspecialchars($patient['dossier_numero']) ?>
+          </small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Corps -->
+      <div class="modal-body px-4 py-4">
+        <div id="cst-alert" class="alert d-none mb-3" role="alert"></div>
+
+        <?php if ($isEnfant): ?>
+        <!-- ─── FORMULAIRE PÉDIATRIQUE ─── -->
+        <div class="alert alert-success border-0 d-flex align-items-center gap-2 mb-4 py-2" style="background:#f0fdf4;">
+          <i class="bi bi-info-circle-fill text-success"></i>
+          <small class="text-success fw-semibold">Formulaire pédiatrique — Poids, Taille et Température uniquement</small>
+        </div>
+        <form id="formConstantes" novalidate>
+          <input type="hidden" name="patient_id" value="<?= (int)$patient['id'] ?>">
+          <input type="hidden" name="profil" value="ENFANT">
+
+          <div class="row g-4">
+            <!-- Poids -->
+            <div class="col-6">
+              <label class="form-label fw-semibold text-success">
+                <i class="bi bi-person-standing me-1"></i>Poids <small class="text-muted">(kg)</small>
+              </label>
+              <input type="number" step="0.1" min="1" max="150" name="poids" id="cst-poids"
+                     class="form-control form-control-lg text-center fw-bold"
+                     placeholder="ex : 18.5"
+                     style="border:2px solid #10b981;border-radius:12px;">
+            </div>
+            <!-- Taille -->
+            <div class="col-6">
+              <label class="form-label fw-semibold text-success">
+                <i class="bi bi-rulers me-1"></i>Taille <small class="text-muted">(cm)</small>
+              </label>
+              <input type="number" min="30" max="200" name="taille" id="cst-taille"
+                     class="form-control form-control-lg text-center fw-bold"
+                     placeholder="ex : 110"
+                     style="border:2px solid #10b981;border-radius:12px;">
+            </div>
+            <!-- Température (pleine largeur) -->
+            <div class="col-12">
+              <label class="form-label fw-semibold text-danger">
+                <i class="bi bi-thermometer-half me-1"></i>Température <small class="text-muted">(°C)</small>
+              </label>
+              <div class="position-relative">
+                <input type="number" step="0.1" min="34" max="43" name="temperature" id="cst-temp"
+                       class="form-control form-control-lg text-center fw-bold"
+                       placeholder="ex : 37.5"
+                       style="border:2px solid #ef4444;border-radius:12px;font-size:1.5rem;height:70px;">
+                <span class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted fs-5 fw-bold pe-none">°C</span>
+              </div>
+              <!-- Indicateur visuel température -->
+              <div id="cst-temp-badge" class="text-center mt-2"></div>
+            </div>
+          </div>
+        </form>
+
+        <?php else: ?>
+        <!-- ─── FORMULAIRE ADULTE ─── -->
+        <form id="formConstantes" novalidate>
+          <input type="hidden" name="patient_id" value="<?= (int)$patient['id'] ?>">
+          <input type="hidden" name="profil" value="ADULTE">
+
+          <!-- Anthropométrie -->
+          <p class="text-muted fw-semibold small text-uppercase mb-2">
+            <i class="bi bi-person-lines-fill me-1"></i>Anthropométrie
+          </p>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Poids <small class="text-muted">(kg)</small></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-person-standing text-primary"></i></span>
+                <input type="number" step="0.1" min="1" max="300" name="poids" id="cst-poids"
+                       class="form-control" placeholder="ex : 70.5">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Taille <small class="text-muted">(cm)</small></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-rulers text-primary"></i></span>
+                <input type="number" min="100" max="250" name="taille" id="cst-taille"
+                       class="form-control" placeholder="ex : 175">
+              </div>
+            </div>
+          </div>
+
+          <!-- Constantes vitales -->
+          <p class="text-muted fw-semibold small text-uppercase mb-2">
+            <i class="bi bi-heart-pulse me-1"></i>Constantes Vitales
+          </p>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Température <small class="text-muted">(°C)</small></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-thermometer-half text-danger"></i></span>
+                <input type="number" step="0.1" min="32" max="43" name="temperature" id="cst-temp"
+                       class="form-control" placeholder="ex : 37.2">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Pouls <small class="text-muted">(bpm)</small></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-heart-pulse text-danger"></i></span>
+                <input type="number" min="20" max="300" name="frequence_cardiaque" id="cst-pouls"
+                       class="form-control" placeholder="ex : 80">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Saturation O₂ <small class="text-muted">(%)</small></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-lungs text-primary"></i></span>
+                <input type="number" min="50" max="100" name="spo2" id="cst-spo2"
+                       class="form-control" placeholder="ex : 98">
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Tension Artérielle <small class="text-muted">(mmHg)</small></label>
+              <div class="d-flex align-items-center gap-2">
+                <div class="input-group" style="max-width:200px;">
+                  <span class="input-group-text bg-light fw-bold" style="font-size:11px;">SYS</span>
+                  <input type="number" min="50" max="250" name="tension_sys" id="cst-sys"
+                         class="form-control" placeholder="ex : 120">
+                </div>
+                <span class="fw-bold text-muted fs-5">/</span>
+                <div class="input-group" style="max-width:200px;">
+                  <span class="input-group-text bg-light fw-bold" style="font-size:11px;">DIA</span>
+                  <input type="number" min="30" max="180" name="tension_dia" id="cst-dia"
+                         class="form-control" placeholder="ex : 80">
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+        <?php endif; ?>
+      </div>
+
+      <!-- Pied -->
+      <div class="modal-footer px-4 py-3 border-top">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="<?= $cstBtnClass ?> btn rounded-pill px-5 fw-bold" id="btnSauvegarderConstantes">
+          <i class="bi bi-save2 me-2"></i>Enregistrer
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+    const isEnfant = <?= $isEnfant ? 'true' : 'false' ?>;
+
+    // ── Indicateur température pédiatrique ──────────────────────────────────
+    const inputTemp = document.getElementById('cst-temp');
+    if (isEnfant && inputTemp) {
+        inputTemp.addEventListener('input', function () {
+            const v = parseFloat(this.value);
+            const badge = document.getElementById('cst-temp-badge');
+            if (!badge || isNaN(v)) { if(badge) badge.innerHTML=''; return; }
+            let html = '', cls = '';
+            if      (v < 36.0)              { cls = 'text-bg-info';    html = '🥶 Hypothermie'; }
+            else if (v >= 36.0 && v < 37.5) { cls = 'text-bg-success'; html = '✅ Normale'; }
+            else if (v >= 37.5 && v < 38.5) { cls = 'text-bg-warning'; html = '⚠️ Fébricule'; }
+            else                            { cls = 'text-bg-danger';  html = '🔥 Fièvre'; }
+            badge.innerHTML = `<span class="badge ${cls} fs-6 px-3 py-2">${html} — ${v} °C</span>`;
+        });
+    }
+
+    // ── Soumission AJAX ──────────────────────────────────────────────────────
+    document.getElementById('btnSauvegarderConstantes').addEventListener('click', function () {
+        const btn  = this;
+        const form = document.getElementById('formConstantes');
+        const alrt = document.getElementById('cst-alert');
+
+        alrt.className = 'alert d-none';
+        btn.disabled   = true;
+        btn.innerHTML  = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement…';
+
+        fetch('<?= BASE_URL ?>patients/save-constantes', {
+            method: 'POST',
+            body: new FormData(form)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                const p = d.data;
+                // Mise à jour widgets dossier
+                if (p.temperature != null)
+                    document.getElementById('vt-temp').innerHTML  = p.temperature + ' <small>°C</small>';
+                if (p.poids != null)
+                    document.getElementById('vt-poids').innerHTML = p.poids + ' <small>kg</small>';
+                if (!isEnfant) {
+                    if (p.pouls != null)
+                        document.getElementById('vt-pouls').innerHTML   = p.pouls + ' <small>bpm</small>';
+                    if (p.sys != null || p.dia != null)
+                        document.getElementById('vt-tension').innerHTML =
+                            (p.sys||'--') + '/' + (p.dia||'--') + ' <small class="fs-6">mmHg</small>';
+                }
+
+                alrt.textContent = '✓ Constantes enregistrées avec succès.';
+                alrt.className   = 'alert alert-success';
+
+                setTimeout(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('modalConstantes')).hide();
+                    alrt.className = 'alert d-none';
+                    form.reset();
+                    if (isEnfant) {
+                        const b = document.getElementById('cst-temp-badge');
+                        if (b) b.innerHTML = '';
+                    }
+                }, 1400);
+            } else {
+                alrt.textContent = 'Erreur : ' + (d.message || 'Echec de l\'enregistrement.');
+                alrt.className   = 'alert alert-danger';
+            }
+        })
+        .catch(() => {
+            alrt.textContent = 'Erreur réseau. Veuillez réessayer.';
+            alrt.className   = 'alert alert-danger';
+        })
+        .finally(() => {
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="bi bi-save2 me-2"></i>Enregistrer';
+        });
+    });
+})();
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -9,8 +9,7 @@ $lits_global = $lits_global ?? [];
 ?>
 
 <!-- IMPORT DES ICONES BOOTSTRAP ET DES ANIMATIONS -->
-<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">-->
-<!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>-->
+<!--<link rel="stylesheet" href="<?= BASE_URL ?>public/css/bootstrap-icons.css">-->
 
 <style>
     /* 1. CONFIGURATION LAYOUT PLEIN ÉCRAN */
@@ -80,6 +79,22 @@ $lits_global = $lits_global ?? [];
 
     .btn-execute { background: #1a4a8e; color: white; font-weight: 700; border-radius: 50px; padding: 7px 20px; border: none; font-size: 0.8rem; transition: 0.2s; }
     .btn-execute:hover { background: #0d2d5e; transform: scale(1.05); color: white; }
+
+    /* 6. LISTE DES PATIENTS DU SERVICE */
+    .patient-row {
+        background: white; border-radius: 12px; padding: 14px 18px;
+        display: flex; align-items: center; gap: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e8eef5;
+        margin-bottom: 10px; transition: 0.2s;
+    }
+    .patient-row:hover { box-shadow: 0 5px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .avatar-inf {
+        width: 42px; height: 42px; border-radius: 50%;
+        background: linear-gradient(135deg, #1a4a8e, #0099ff);
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 0.9rem; flex-shrink: 0;
+    }
+    .patient-row-info { flex: 1; min-width: 0; }
 </style>
 
 <!-- HEADER DU COCKPIT -->
@@ -255,6 +270,67 @@ $lits_global = $lits_global ?? [];
         </div>
     </div>
 </div>
+
+<!-- SECTION : PATIENTS DU SERVICE -->
+<div class="container-fluid px-4 pb-5">
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="planning-card border shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="section-title text-primary mb-0">
+                        <i class="bi bi-people-fill"></i> Patients Hospitalisés du Service
+                    </h6>
+                    <span class="badge bg-primary rounded-pill px-3"><?= count($patients_service) ?> patient(s)</span>
+                </div>
+
+                <?php if (empty($patients_service)): ?>
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-person-x fs-2 opacity-25 d-block mb-2"></i>
+                        <small>Aucun patient hospitalisé actuellement dans le service.</small>
+                    </div>
+                <?php else: ?>
+                    <div class="row g-2">
+                        <?php foreach ($patients_service as $p):
+                            $initials = strtoupper(substr($p['nom'] ?? 'X', 0, 1) . substr($p['prenom'] ?? 'X', 0, 1));
+                            $patientId = $p['id'] ?? 0;
+                        ?>
+                        <div class="col-md-6 col-xl-4">
+                            <div class="patient-row">
+                                <div class="avatar-inf"><?= $initials ?></div>
+                                <div class="patient-row-info">
+                                    <div class="fw-bold text-dark" style="font-size:0.9rem;">
+                                        <?= strtoupper(htmlspecialchars($p['nom'])) ?> <?= htmlspecialchars($p['prenom']) ?>
+                                    </div>
+                                    <small class="text-muted">
+                                        <?= htmlspecialchars($p['dossier_numero'] ?? '') ?>
+                                        <?php if (!empty($p['nom_lit'])): ?>
+                                            &bull; Lit <?= htmlspecialchars($p['nom_lit']) ?>
+                                        <?php endif; ?>
+                                    </small>
+                                </div>
+                                <div class="d-flex gap-1 flex-shrink-0">
+                                    <a href="<?= BASE_URL ?>patients/dossier/<?= $patientId ?>"
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-2" title="Dossier médical">
+                                        <i class="bi bi-folder2-open"></i>
+                                    </a>
+                                    <a href="<?= BASE_URL ?>hospitalisation/suivi/<?= $patientId ?>"
+                                       class="btn btn-sm btn-outline-info rounded-pill px-2" title="Suivi / Constantes">
+                                        <i class="bi bi-speedometer2"></i>
+                                    </a>
+                                    <a href="<?= BASE_URL ?>hospitalisation/surveillance-intensive/<?= $patientId ?>"
+                                       class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Fiche S.I.">
+                                        <i class="bi bi-clipboard2-pulse"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div><!-- /container-fluid patients -->
 
 <!-- MODALE D'INSTALLATION (ADMISSION SUR LIT) -->
 <div class="modal fade" id="modalAdmit" tabindex="-1" aria-hidden="true">

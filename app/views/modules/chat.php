@@ -1,11 +1,12 @@
+<?php require_once __DIR__ . '/../layouts/header.php'; ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title>Chat Médical</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="<?= BASE_URL ?>public/css/bootstrap.min.css" rel="stylesheet">-->
     <style>
         * { box-sizing: border-box; }
-        body { 
+        body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
@@ -32,7 +33,7 @@
             margin: 0;
             font-weight: 600;
         }
-        .chat-container { 
+        .chat-container {
             height: 75vh;
             display: flex;
         }
@@ -43,7 +44,7 @@
             display: flex;
             flex-direction: column;
         }
-        .conversations { 
+        .conversations {
             flex: 1;
             overflow-y: auto;
             background: white;
@@ -281,7 +282,7 @@
                 <i class="fas fa-shield-alt" title="Communication sécurisée"></i>
             </div>
         </div>
-        
+
         <div class="chat-container">
             <div class="sidebar">
                 <!-- Messages Urgents -->
@@ -304,12 +305,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="section-title">
                     <i class="fas fa-comments"></i>
                     Conversations Récentes
                 </div>
-                
+
                 <div class="conversations">
                     <div class="conversation-item" data-contact="1">
                         <div class="avatar">DM</div>
@@ -323,7 +324,7 @@
                         </div>
                         <span class="badge">2</span>
                     </div>
-                    
+
                     <div class="conversation-item" data-contact="2">
                         <div class="avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">IS</div>
                         <div class="flex-grow-1">
@@ -335,7 +336,7 @@
                             <div class="small text-success mt-1">Constantes prises</div>
                         </div>
                     </div>
-                    
+
                     <div class="conversation-item" data-contact="3">
                         <div class="avatar" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">LB</div>
                         <div class="flex-grow-1">
@@ -348,7 +349,7 @@
                         </div>
                         <span class="badge" style="background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);">1</span>
                     </div>
-                    
+
                     <div class="conversation-item" data-contact="4">
                         <div class="avatar" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">PH</div>
                         <div class="flex-grow-1">
@@ -362,14 +363,14 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="main-chat">
                 <div class="empty-state" id="no-conversation">
                     <i class="fas fa-comments"></i>
                     <h4 class="mb-3">Bienvenue dans le Chat Médical</h4>
                     <p class="mb-4">Sélectionnez une conversation à gauche pour commencer<br>
                     <small class="text-muted">Communication sécurisée entre professionnels de santé</small></p>
-                    
+
                     <div class="d-flex gap-3 mb-4">
                         <button class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i> Nouvelle conversation
@@ -378,7 +379,7 @@
                             <i class="fas fa-search me-2"></i> Rechercher
                         </button>
                     </div>
-                    
+
                     <div class="features-grid">
                         <div class="feature-item">
                             <i class="fas fa-shield-alt"></i>
@@ -397,7 +398,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="d-none chat-active" id="chat-active">
                     <div class="chat-header-active">
                         <div class="avatar">DM</div>
@@ -414,12 +415,12 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="chat-messages">
                         <div class="text-center mb-4">
                             <small class="text-muted bg-white px-3 py-1 rounded-pill">Conversation du 15 Décembre 2024</small>
                         </div>
-                        
+
                         <div class="message received">
                             <div class="avatar" style="width: 35px; height: 35px; font-size: 12px;">DM</div>
                             <div class="message-bubble">
@@ -427,7 +428,7 @@
                                 <small class="text-muted d-block mt-2">14:30</small>
                             </div>
                         </div>
-                        
+
                         <div class="message sent">
                             <div class="avatar" style="width: 35px; height: 35px; font-size: 12px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">Moi</div>
                             <div class="message-bubble">
@@ -435,7 +436,7 @@
                                 <small class="opacity-75 d-block mt-2">14:32</small>
                             </div>
                         </div>
-                        
+
                         <div class="message received">
                             <div class="avatar" style="width: 35px; height: 35px; font-size: 12px;">DM</div>
                             <div class="message-bubble">
@@ -444,7 +445,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="chat-input">
                         <div class="input-group">
                             <input type="text" class="form-control" placeholder="Tapez votre message...">
@@ -458,13 +459,13 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!--<script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>-->
     <script>
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.addEventListener('click', function() {
                 document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
-                
+
                 document.getElementById('no-conversation').style.display = 'none';
                 const chatActive = document.getElementById('chat-active');
                 chatActive.classList.remove('d-none');
@@ -472,12 +473,12 @@
                 chatActive.style.height = '100%';
             });
         });
-        
+
         // Animation d'entrée
         document.querySelector('.chat-wrapper').style.transform = 'translateY(20px)';
         document.querySelector('.chat-wrapper').style.opacity = '0';
         document.querySelector('.chat-wrapper').style.transition = 'all 0.5s ease';
-        
+
         setTimeout(() => {
             document.querySelector('.chat-wrapper').style.transform = 'translateY(0)';
             document.querySelector('.chat-wrapper').style.opacity = '1';

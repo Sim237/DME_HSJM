@@ -6,7 +6,7 @@ $dernieres = $dernieres_constantes ?? [];
 
 
 <!-- Inclusion de Chart.js pour les graphiques -->
-<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+<!--<script src="<?= BASE_URL ?>public/js/chart.umd.min.js"></script>-->
 
 <script src="<?= BASE_URL ?>public/js/chart.umd.js"></script>
 
@@ -117,14 +117,33 @@ $dernieres = $dernieres_constantes ?? [];
             <div class="row mb-4 no-print">
     <div class="col-12">
         <div class="card p-3 shadow-sm border-0 bg-light">
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddConstante"><i class="bi bi-plus-circle"></i> Ajouter Constantes</button>
-                <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#modalAddSoin"><i class="bi bi-calendar-plus"></i> Ajouter Soin</button>
-                <!-- Dans suivi.php -->
-<a href="<?= BASE_URL ?>hospitalisation/observations-evolution/<?= htmlspecialchars($patient['id']) ?>"
-   class="btn btn-dark rounded-pill px-4">
-   <i class="bi bi-pencil-square"></i> Note d'évolution
-</a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="<?= BASE_URL ?>dashboard" class="btn btn-outline-secondary rounded-pill px-3">
+                    <i class="bi bi-house-door"></i> Tableau de bord
+                </a>
+                <button class="btn btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalEditPatient">
+                    <i class="bi bi-person-fill-gear"></i> Modifier le patient
+                </button>
+                <div class="vr mx-1"></div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddConstante">
+                    <i class="bi bi-plus-circle"></i> Ajouter Constantes
+                </button>
+                <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#modalAddSoin">
+                    <i class="bi bi-calendar-plus"></i> Ajouter Soin
+                </button>
+                <a href="<?= BASE_URL ?>hospitalisation/observations-evolution/<?= htmlspecialchars($patient['id']) ?>"
+                   class="btn btn-dark rounded-pill px-3">
+                    <i class="bi bi-pencil-square"></i> Note d'évolution
+                </a>
+                <div class="vr mx-1"></div>
+                <a href="<?= BASE_URL ?>hospitalisation/surveillance-intensive/<?= htmlspecialchars($patient['id']) ?>"
+                   class="btn btn-danger rounded-pill px-3">
+                    <i class="bi bi-clipboard2-pulse"></i> Fiche S.I.
+                </a>
+                <a href="<?= BASE_URL ?>hospitalisation/fiche-transfusionnelle/<?= htmlspecialchars($patient['id']) ?>"
+                   class="btn btn-warning rounded-pill px-3">
+                    <i class="bi bi-droplet-half"></i> Fiche Transfusionnelle
+                </a>
             </div>
         </div>
     </div>
@@ -223,57 +242,441 @@ $dernieres = $dernieres_constantes ?? [];
                 </div>
             </div>
 
+            <!-- SECTION SURVEILLANCE INTENSIVE (SI DONNÉES DISPONIBLES) -->
+            <?php if (!empty($si_data)): ?>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-danger">
+                        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center py-3">
+                            <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Surveillance Intensive</h5>
+                            <div class="d-flex gap-2 align-items-center">
+                                <span class="badge bg-white text-danger"><?= count($si_data) ?> observation(s)</span>
+                                <a href="<?= BASE_URL ?>hospitalisation/surveillance-intensive/<?= htmlspecialchars($patient['id']) ?>"
+                                   class="btn btn-sm btn-outline-light rounded-pill">
+                                    <i class="bi bi-plus-circle"></i> Nouvelle observation
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+
+                            <!-- Graphiques SI -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-white py-2">
+                                            <small class="fw-bold text-danger"><i class="bi bi-thermometer-half"></i> Température (°C)</small>
+                                        </div>
+                                        <div class="card-body p-2">
+                                            <canvas id="chartSITemp" height="180"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-white py-2">
+                                            <small class="fw-bold text-primary"><i class="bi bi-heart-pulse"></i> Pouls (bpm)</small>
+                                        </div>
+                                        <div class="card-body p-2">
+                                            <canvas id="chartSIPouls" height="180"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-white py-2">
+                                            <small class="fw-bold text-info"><i class="bi bi-activity"></i> Tension Artérielle</small>
+                                        </div>
+                                        <div class="card-body p-2">
+                                            <canvas id="chartSITA" height="180"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tableau SI -->
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date / Heure</th>
+                                            <th>TA</th>
+                                            <th>Pouls</th>
+                                            <th>T°</th>
+                                            <th>Resp.</th>
+                                            <th>Diurèse</th>
+                                            <th>Conscience</th>
+                                            <th>Aspiration</th>
+                                            <th>Observations</th>
+                                            <th>Staff</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($si_data as $obs): ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?= htmlspecialchars($obs['date_obs'] ?? '') ?></strong>
+                                                <small class="text-muted d-block"><?= htmlspecialchars($obs['heure_obs'] ?? '') ?></small>
+                                            </td>
+                                            <td><?= htmlspecialchars($obs['ta'] ?? '--') ?></td>
+                                            <td>
+                                                <?php $p = $obs['pouls'] ?? null; ?>
+                                                <?php if ($p): ?>
+                                                    <span class="<?= ($p > 110 || $p < 50) ? 'text-danger fw-bold' : ($p > 95 ? 'text-warning fw-bold' : '') ?>">
+                                                        <?= $p ?>
+                                                    </span>
+                                                <?php else: ?>--<?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php $t = $obs['temperature'] ?? null; ?>
+                                                <?php if ($t): ?>
+                                                    <span class="<?= ($t >= 38.5 || $t <= 35.5) ? 'text-danger fw-bold' : ($t >= 37.8 ? 'text-warning fw-bold' : '') ?>">
+                                                        <?= $t ?>°
+                                                    </span>
+                                                <?php else: ?>--<?php endif; ?>
+                                            </td>
+                                            <td><?= htmlspecialchars($obs['respiration'] ?? '--') ?></td>
+                                            <td><?= htmlspecialchars($obs['diurese'] ?? '--') ?></td>
+                                            <td>
+                                                <?php $c = $obs['conscience'] ?? ''; ?>
+                                                <?php $cBadge = ['A' => 'success', 'V' => 'warning', 'P' => 'orange', 'U' => 'danger']; ?>
+                                                <span class="badge bg-<?= $cBadge[$c] ?? 'secondary' ?>"><?= htmlspecialchars($c ?: '--') ?></span>
+                                            </td>
+                                            <td><?= htmlspecialchars($obs['aspiration'] ?? '--') ?></td>
+                                            <td style="max-width: 200px; font-size: 0.82rem;"><?= htmlspecialchars($obs['observations'] ?? '') ?></td>
+                                            <td><span class="badge bg-secondary"><?= htmlspecialchars($obs['staff'] ?? '') ?></span></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            (function() {
+                const siData = <?= json_encode(array_reverse($si_data)) ?>;
+                const siLabels = siData.map(d => (d.date_obs || '') + ' ' + (d.heure_obs || ''));
+
+                // Temp chart
+                new Chart(document.getElementById('chartSITemp'), {
+                    type: 'line',
+                    data: {
+                        labels: siLabels,
+                        datasets: [{
+                            label: 'T° (°C)',
+                            data: siData.map(d => d.temperature),
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220,53,69,0.08)',
+                            tension: 0.3, fill: true, pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true, plugins: { legend: { display: false } },
+                        scales: { y: { min: 35, max: 42, title: { display: true, text: '°C' } } }
+                    }
+                });
+
+                // Pouls chart
+                new Chart(document.getElementById('chartSIPouls'), {
+                    type: 'line',
+                    data: {
+                        labels: siLabels,
+                        datasets: [{
+                            label: 'Pouls (bpm)',
+                            data: siData.map(d => d.pouls),
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13,110,253,0.08)',
+                            tension: 0.3, fill: true, pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true, plugins: { legend: { display: false } },
+                        scales: { y: { title: { display: true, text: 'bpm' } } }
+                    }
+                });
+
+                // TA chart (parse "120/80" → systolique)
+                const taSys = siData.map(d => {
+                    if (!d.ta) return null;
+                    const parts = d.ta.toString().split('/');
+                    return parts[0] ? parseInt(parts[0]) : null;
+                });
+                const taDia = siData.map(d => {
+                    if (!d.ta) return null;
+                    const parts = d.ta.toString().split('/');
+                    return parts[1] ? parseInt(parts[1]) : null;
+                });
+                new Chart(document.getElementById('chartSITA'), {
+                    type: 'line',
+                    data: {
+                        labels: siLabels,
+                        datasets: [
+                            { label: 'Systolique', data: taSys, borderColor: '#0dcaf0', tension: 0.3, pointRadius: 4 },
+                            { label: 'Diastolique', data: taDia, borderColor: '#0d6efd', tension: 0.3, pointRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { title: { display: true, text: 'mmHg' } } }
+                    }
+                });
+            })();
+            </script>
+            <?php endif; ?>
+
         </main>
     </div>
 </div>
 
-<!-- Modal Ajout Constantes -->
-<div class="modal fade" id="modalAddConstante" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="<?= BASE_URL ?>hospitalisation/add-constantes" method="POST">
-               <input type="hidden" name="admission_id" value="<?= htmlspecialchars($dossier['id'] ?? '0') ?>">
-                <input type="hidden" name="patient_id" value="<?= htmlspecialchars($dossier['patient_id'] ?? '0') ?>">
+<?php if (isset($_GET['success']) && $_GET['success'] === 'patient_maj'): ?>
+<div class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 shadow" style="z-index:9999" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>Données du patient mises à jour avec succès.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php endif; ?>
+<?php if (isset($_GET['error'])): ?>
+<div class="alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3 shadow" style="z-index:9999" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <?= $_GET['error'] === 'champs_requis' ? 'Nom et prénom obligatoires.' : 'Une erreur est survenue.' ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php endif; ?>
 
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Nouvelle Prise de Constantes</h5>
+<!-- ═══ Modal : Modifier les données personnelles du patient ═══ -->
+<div class="modal fade" id="modalEditPatient" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <form action="<?= BASE_URL ?>hospitalisation/update-patient" method="POST">
+                <input type="hidden" name="patient_id" value="<?= (int)($patient['id']) ?>">
+
+                <div class="modal-header text-white" style="background:#0d6efd;">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-person-fill-gear me-2"></i>Modifier les données du patient
+                    </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Température (°C)</label>
-                            <input type="number" step="0.1" class="form-control" name="temperature" placeholder="37.0" required>
+
+                <div class="modal-body p-4">
+
+                    <!-- Identité -->
+                    <p class="fw-bold text-primary mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;">
+                        <i class="bi bi-person-vcard me-1"></i>Identité
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nom <span class="text-danger">*</span></label>
+                            <input type="text" name="nom" class="form-control" required
+                                   value="<?= htmlspecialchars($patient['nom'] ?? '') ?>">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Pouls (bpm)</label>
-                            <input type="number" class="form-control" name="frequence_cardiaque" placeholder="80">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Prénom <span class="text-danger">*</span></label>
+                            <input type="text" name="prenom" class="form-control" required
+                                   value="<?= htmlspecialchars($patient['prenom'] ?? '') ?>">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Tension Systolique</label>
-                            <input type="number" class="form-control" name="tension_sys" placeholder="120">
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Date de naissance</label>
+                            <input type="date" name="date_naissance" class="form-control"
+                                   value="<?= htmlspecialchars($patient['date_naissance'] ?? '') ?>">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Tension Diastolique</label>
-                            <input type="number" class="form-control" name="tension_dia" placeholder="80">
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Sexe</label>
+                            <select name="sexe" class="form-select">
+                                <option value="M" <?= ($patient['sexe'] ?? '') === 'M' ? 'selected' : '' ?>>Masculin</option>
+                                <option value="F" <?= ($patient['sexe'] ?? '') === 'F' ? 'selected' : '' ?>>Féminin</option>
+                            </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">SpO2 (%)</label>
-                            <input type="number" class="form-control" name="spo2" placeholder="98">
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Groupe sanguin</label>
+                            <select name="groupe_sanguin" class="form-select">
+                                <option value="">— Inconnu —</option>
+                                <?php foreach (['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $gs): ?>
+                                <option value="<?= $gs ?>" <?= ($patient['groupe_sanguin'] ?? '') === $gs ? 'selected' : '' ?>><?= $gs ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Observations</label>
-                            <textarea class="form-control" name="observations" rows="2"></textarea>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Profession</label>
+                            <input type="text" name="profession" class="form-control" placeholder="Optionnel"
+                                   value="<?= htmlspecialchars($patient['profession'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nationalité</label>
+                            <input type="text" name="nationalite" class="form-control" placeholder="Optionnel"
+                                   value="<?= htmlspecialchars($patient['nationalite'] ?? '') ?>">
                         </div>
                     </div>
-                </div>
+
+                    <!-- Coordonnées -->
+                    <p class="fw-bold text-primary mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;">
+                        <i class="bi bi-telephone me-1"></i>Coordonnées
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Téléphone</label>
+                            <input type="tel" name="telephone" class="form-control"
+                                   value="<?= htmlspecialchars($patient['telephone'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="email" class="form-control"
+                                   value="<?= htmlspecialchars($patient['email'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Adresse</label>
+                            <input type="text" name="adresse" class="form-control"
+                                   value="<?= htmlspecialchars($patient['adresse'] ?? '') ?>">
+                        </div>
+                    </div>
+
+                    <!-- Contact d'urgence -->
+                    <p class="fw-bold text-warning mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;">
+                        <i class="bi bi-person-lines-fill me-1"></i>Contact d'urgence
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Nom du contact</label>
+                            <input type="text" name="contact_nom" class="form-control"
+                                   value="<?= htmlspecialchars($patient['contact_nom'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Téléphone du contact</label>
+                            <input type="tel" name="contact_telephone" class="form-control"
+                                   value="<?= htmlspecialchars($patient['contact_telephone'] ?? '') ?>">
+                        </div>
+                    </div>
+
+                    <!-- Antécédents & Allergies -->
+                    <p class="fw-bold text-danger mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;">
+                        <i class="bi bi-clipboard2-heart me-1"></i>Antécédents médicaux &amp; Allergies
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Antécédents médicaux</label>
+                            <textarea name="antecedents_medicaux" class="form-control" rows="4"
+                                      placeholder="HTA, diabète, chirurgies antérieures…"><?= htmlspecialchars($patient['antecedents_medicaux'] ?? '') ?></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Allergies connues</label>
+                            <textarea name="allergies" class="form-control" rows="4"
+                                      placeholder="Pénicilline, AINS, latex…"><?= htmlspecialchars($patient['allergies'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+
+                </div><!-- /modal-body -->
+
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">
+                        <i class="bi bi-check2-circle me-2"></i>Enregistrer les modifications
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Modal Ajout Constantes -->
+<div class="modal fade" id="modalAddConstante" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="<?= BASE_URL ?>hospitalisation/add-constantes" method="POST">
+                <input type="hidden" name="admission_id" value="<?= htmlspecialchars($dossier['id'] ?? '0') ?>">
+                <input type="hidden" name="patient_id" value="<?= htmlspecialchars($dossier['patient_id'] ?? '0') ?>">
+
+                <div class="modal-header text-white" style="background:#2563eb;">
+                    <h5 class="modal-title"><i class="fas fa-heartbeat me-2"></i>Fiche de Paramètres</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <!-- SECTION 1 : Signes vitaux classiques -->
+                    <p class="fw-semibold text-primary mb-2" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;">Signes Vitaux</p>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label form-label-sm">Température (°C)</label>
+                            <input type="number" step="0.1" min="34" max="42" class="form-control form-control-sm" name="temperature" placeholder="37.0" required>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label form-label-sm">Pouls (bpm)</label>
+                            <input type="number" min="20" max="300" class="form-control form-control-sm" name="frequence_cardiaque" placeholder="80">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label form-label-sm">TA Systolique (mmHg)</label>
+                            <input type="number" min="50" max="300" class="form-control form-control-sm" name="tension_sys" placeholder="120">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label form-label-sm">TA Diastolique (mmHg)</label>
+                            <input type="number" min="30" max="200" class="form-control form-control-sm" name="tension_dia" placeholder="80">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label form-label-sm">SpO2 (%)</label>
+                            <input type="number" min="50" max="100" class="form-control form-control-sm" name="spo2" placeholder="98">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label form-label-sm">Fréquence Resp. (/min)</label>
+                            <input type="number" min="5" max="60" class="form-control form-control-sm" name="frequence_respiratoire" placeholder="16">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- SECTION 2 : Biologie rapide -->
+                    <p class="fw-semibold text-primary mb-2" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;">Biologie au Lit</p>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label form-label-sm">Glycémie (g/L)</label>
+                            <input type="number" step="0.01" min="0" max="30" class="form-control form-control-sm" name="glycemie" placeholder="0.90">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label form-label-sm">Diurèse (mL/24h)</label>
+                            <input type="number" min="0" max="10000" class="form-control form-control-sm" name="diurese" placeholder="1500">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- SECTION 3 : Oxygénothérapie -->
+                    <p class="fw-semibold text-primary mb-2" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;">Oxygénothérapie</p>
+                    <div class="row g-3 mb-3 align-items-center">
+                        <div class="col-auto">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" id="toggleOxygene" name="sous_oxygene" value="1" onchange="toggleDebitO2(this)">
+                                <label class="form-check-label fw-semibold" for="toggleOxygene">Patient sous oxygène</label>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3" id="champDebitO2" style="display:none;">
+                            <label class="form-label form-label-sm">Débit O2 (L/min)</label>
+                            <input type="number" step="0.5" min="0" max="15" class="form-control form-control-sm" name="debit_oxygene" id="debit_oxygene" placeholder="2">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- SECTION 4 : Observations -->
+                    <p class="fw-semibold text-primary mb-2" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;">Observations Infirmières</p>
+                    <textarea class="form-control form-control-sm" name="observations" rows="3" placeholder="État général, comportement, plaintes, remarques…"></textarea>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>Enregistrer la Fiche</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDebitO2(checkbox) {
+    document.getElementById('champDebitO2').style.display = checkbox.checked ? 'block' : 'none';
+    if (!checkbox.checked) document.getElementById('debit_oxygene').value = '';
+}
+</script>
 
 <!-- Modal Planification Soin -->
 <div class="modal fade" id="modalAddSoin" tabindex="-1">
@@ -307,6 +710,10 @@ $dernieres = $dernieres_constantes ?? [];
                     <div class="mb-3">
                         <label class="form-label">Description / Instructions</label>
                         <textarea class="form-control" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Condition d'application <small class="text-muted">(optionnel, ex: si fièvre &gt; 38°C)</small></label>
+                        <input type="text" class="form-control" name="condition_application" placeholder="ex : si fièvre, si douleur EVA > 6…">
                     </div>
                 </div>
                 <div class="modal-footer">
