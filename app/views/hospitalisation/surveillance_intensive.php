@@ -1,7 +1,18 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+<?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <!-- Bibliothèques additionnelles pour le dynamisme -->
-<!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>-->
 
 <style>
     :root {
@@ -147,9 +158,14 @@
 
     <!-- BARRE D'ACTIONS TOP -->
     <div class="d-flex justify-content-between align-items-center py-3 px-4 bg-white border-bottom shadow-sm no-print sticky-top mb-3">
-        <a href="<?= BASE_URL ?>patients/dossier/<?= $patient['id'] ?>" class="btn btn-outline-dark btn-sm rounded-pill">
-            <i class="bi bi-arrow-left"></i> Retour Dossier
-        </a>
+        <div class="d-flex gap-2">
+            <a href="<?= BASE_URL ?>hospitalisation/suivi/<?= $patient['id'] ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-arrow-left"></i> Retour Suivi
+            </a>
+            <a href="<?= BASE_URL ?>patients/dossier/<?= $patient['id'] ?>" class="btn btn-outline-dark btn-sm rounded-pill">
+                <i class="bi bi-folder2-open"></i> Dossier
+            </a>
+        </div>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-dark btn-sm rounded-pill px-3" onclick="addRow()">
         <i class="bi bi-plus-circle me-1"></i> Ajouter une ligne

@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 
 class PharmacieService {
     private $db;
@@ -46,19 +58,25 @@ class PharmacieService {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function creerOrdonnancePharmacie($consultation_id, $medicaments) {
+    public function creerOrdonnancePharmacie($consultation_id, $medicaments, $patient_id = null, $prescripteur_id = null) {
         try {
             $this->db->beginTransaction();
 
-            // 1. Récupération des infos de consultation
-            $stmtC = $this->db->prepare("SELECT patient_id, medecin_id FROM consultations WHERE id = ?");
-            $stmtC->execute([$consultation_id]);
-            $c = $stmtC->fetch(PDO::FETCH_ASSOC);
-            if (!$c) throw new Exception("Consultation introuvable");
+            // 1. Si consultation_id fourni, récupérer patient_id et medecin_id depuis la consultation
+            if ($consultation_id) {
+                $stmtC = $this->db->prepare("SELECT patient_id, medecin_id FROM consultations WHERE id = ?");
+                $stmtC->execute([$consultation_id]);
+                $c = $stmtC->fetch(PDO::FETCH_ASSOC);
+                if (!$c) throw new Exception("Consultation introuvable");
+                $patient_id     = $c['patient_id'];
+                $prescripteur_id = $c['medecin_id'];
+            }
+
+            if (!$patient_id || !$prescripteur_id) throw new Exception("Patient ou prescripteur manquant");
 
             // 2. Création de l'ordonnance
             $stmtO = $this->db->prepare("INSERT INTO ordonnances_pharmacie (patient_id, medecin_id, consultation_id, statut, date_creation) VALUES (?, ?, ?, 'EN_ATTENTE', NOW())");
-            $stmtO->execute([$c['patient_id'], $c['medecin_id'], $consultation_id]);
+            $stmtO->execute([$patient_id, $prescripteur_id, $consultation_id]);
             $ordonnance_id = $this->db->lastInsertId();
 
             // 3. Insertion de TOUS les médicaments (La boucle)
@@ -81,6 +99,33 @@ class PharmacieService {
             }
 
             $this->db->commit();
+
+            // ── Notifier les pharmaciens (cloche dans l'app) ──
+            try {
+                require_once __DIR__ . '/NotificationCenter.php';
+                $center = new NotificationCenter($this->db);
+                $stmtInfo = $this->db->prepare("
+                    SELECT p.nom AS p_nom, p.prenom AS p_prenom, p.dossier_numero,
+                           u.nom AS m_nom, u.prenom AS m_prenom
+                    FROM patients p, users u
+                    WHERE p.id = ? AND u.id = ?
+                ");
+                $stmtInfo->execute([$patient_id, $prescripteur_id]);
+                $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+
+                $center->notifyByRole('PHARMACIEN', [
+                    'category' => NotificationCenter::CAT_PHARMACIE,
+                    'title'    => '💊 Nouvelle ordonnance',
+                    'message'  => "Patient {$info['p_nom']} {$info['p_prenom']} (#{$info['dossier_numero']}) — Dr. {$info['m_nom']} — "
+                                . count($medicaments) . " médicament(s) à délivrer",
+                    'link'     => 'pharmacie/traitement/' . (int)$ordonnance_id,
+                    'priority' => 'high',
+                    'meta'     => ['ordonnance_id' => (int)$ordonnance_id, 'patient_id' => (int)$patient_id],
+                ]);
+            } catch (\Throwable $e) {
+                error_log('[PharmacieService] notify failed: ' . $e->getMessage());
+            }
+
             return $ordonnance_id;
         } catch (Exception $e) {
             $this->db->rollBack();

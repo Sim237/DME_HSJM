@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 // Modal Evolution - Graphs constantes over time (reuse patients/evolution.php logic)
 ?>
 <div class="modal fade" id="modalEvolution" tabindex="-1">
@@ -38,7 +50,7 @@
     <script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
     <script src="<?= BASE_URL ?>public/js/main.js"></script>
 
-<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+<!--<script src="<?= BASE_URL ?>public/js/chart.umd.min.js"></script>-->
 <script>
 let evolutionData = {};
 let patientName = '';

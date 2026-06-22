@@ -3,7 +3,19 @@
 
     <!-- VUE DES SALLES (Temps Réel) -->
     <div class="row g-4 mb-5">
-        <?php foreach($salles as $salle): ?>
+        <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ foreach($salles as $salle): ?>
         <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-4 <?= $salle['statut'] === 'OCCUPEE' ? 'bg-danger text-white' : 'bg-success text-white' ?>">
                 <div class="card-body">

@@ -1,4 +1,16 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+<?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="app-wrapper" style="display: flex;">
     <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
@@ -28,7 +40,7 @@
     </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= BASE_URL ?>public/js/chart.umd.min.js"></script>
 <script>
 // Logique Température
 new Chart(document.getElementById('tempChart'), {

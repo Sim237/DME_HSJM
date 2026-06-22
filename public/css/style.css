@@ -4,8 +4,7 @@ Styles principaux de l'application DME Hospital - Version Moderne 2025
 Design System: Professional Medical Dashboard
 ============================================================================ */
 
-/* ===== IMPORT FONTS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+/* ===== IMPORT FONTS — servi localement ===== */
 
 /* ===== VARIABLES CSS MODERNES ===== */
 :root {
@@ -1151,25 +1150,53 @@ textarea.form-control {
 
 /* ===== PRINT STYLES ===== */
 @media print {
-    .sidebar,
-    .topbar,
-    .no-print,
-    button,
-    .btn {
+    /* Cacher tout ce qui n'est pas le contenu médical */
+    .sidebar, .topbar, .no-print,
+    button:not(.print-keep), .btn:not(.print-keep),
+    nav.navbar, .modal, .toast, .alert-dismissible .btn-close,
+    #sidebarToggle, .offcanvas, footer {
         display: none !important;
     }
-    
-    main {
-        margin-left: 0;
+
+    main, body, html {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        font-size: 11pt;
+        color: #000;
     }
-    
+
+    /* Retrait de la marge gauche de la sidebar */
+    main { margin-left: 0 !important; }
+
     .card {
-        box-shadow: none;
-        border: 1px solid var(--border-default);
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
         page-break-inside: avoid;
+        break-inside: avoid;
     }
-    
-    body {
-        background: white;
+
+    /* Forcer chaque section de dossier à démarrer sur une nouvelle page */
+    .print-page-break { page-break-before: always; }
+
+    /* Tabs Bootstrap : afficher tous les onglets à l'impression */
+    .tab-pane { display: block !important; opacity: 1 !important; }
+
+    /* En-tête d'impression avec logo et infos hôpital */
+    .print-header {
+        display: flex !important;
+        justify-content: space-between;
+        border-bottom: 2px solid #000;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
     }
+
+    /* Liens : afficher l'URL entre parenthèses à l'impression */
+    a[href]:after { content: none; }
+
+    /* Badges colorés → texte simple */
+    .badge { border: 1px solid #333 !important; background: none !important; color: #000 !important; }
+
+    /* Masquer les graphiques interactifs */
+    canvas { display: none !important; }
 }

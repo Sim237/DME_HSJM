@@ -1,0 +1,182 @@
+/*
+ * ═══════════════════════════════════════════════════════════════
+ *  Module Dictée Vocale — Consultation SimCare+ HSJM
+ *  Bouton micro flottant sur chaque champ texte du formulaire
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ── Wrapper générique (position:relative nécessaire) ── */
+.dictation-wrapper {
+    position: relative;
+    display: block;
+}
+
+/* ── Wrapper pour input[type="text"] ── */
+.dictation-input-wrapper {
+    display: flex;
+    align-items: center;
+}
+.dictation-input-wrapper input {
+    padding-right: 38px !important;
+    flex: 1;
+}
+
+/* ── Textarea : ajouter de l'espace en bas pour le bouton ── */
+.dictation-wrapper textarea {
+    padding-bottom: 34px !important;
+}
+
+/* ── Bouton microphone ── */
+.btn-dictee {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+    z-index: 10;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    outline: none;
+}
+
+/* Position pour textarea (coin bas-droit) */
+.dictation-wrapper:not(.dictation-input-wrapper) .btn-dictee {
+    bottom: 7px;
+    right: 9px;
+}
+
+/* Position pour input (centré verticalement à droite) */
+.dictation-input-wrapper .btn-dictee {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    bottom: auto;
+    transform: translateY(-50%);
+}
+
+/* États du bouton */
+.btn-dictee:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+.btn-dictee:focus-visible {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .25);
+}
+
+/* ── État enregistrement ── */
+.btn-dictee.recording {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #ef4444;
+    animation: dictPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes dictPulse {
+    0%,  100% { box-shadow: 0 0 0 0   rgba(239, 68, 68, .45); }
+    50%       { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0);   }
+}
+
+/* ── État transcription en cours ── */
+.btn-dictee.transcribing {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    cursor: wait;
+    animation: dictSpin 1s linear infinite;
+}
+
+@keyframes dictSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* L'icône hourglass ne doit pas tourner (c'est le bouton entier) */
+.dictation-input-wrapper .btn-dictee.transcribing {
+    animation: dictSpin 1s linear infinite;
+    transform-origin: center center;
+}
+
+/* ── Badge de statut flottant (bulle au-dessus du bouton) ── */
+.dictee-status {
+    position: absolute;
+    bottom: 42px;
+    right: 4px;
+    background: rgba(15, 23, 42, .88);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 500;
+    font-family: 'Arial', Helvetica, sans-serif;
+    padding: 3px 9px 3px 7px;
+    border-radius: 7px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity .2s, transform .2s;
+    line-height: 1.4;
+}
+
+/* Petite flèche vers le bas */
+.dictee-status::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    right: 9px;
+    border: 3px solid transparent;
+    border-top-color: rgba(15, 23, 42, .88);
+}
+
+.dictee-status.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Texte intermédiaire (transcription en temps réel) ── */
+.dictee-interim {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ── Bandeau "Non supporté" (affiché une seule fois) ── */
+.dictee-unsupported-banner {
+    background: #fef9c3;
+    border: 1px solid #fde047;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    color: #713f12;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Animation point clignotant (dans le badge) ── */
+.dictee-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    margin-right: 4px;
+    vertical-align: middle;
+    animation: dictDot .9s ease-in-out infinite alternate;
+}
+
+@keyframes dictDot {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: .3; transform: scale(.7); }
+}

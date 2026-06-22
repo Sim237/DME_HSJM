@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enquête de Satisfaction - DME Hospital</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Enquête de Satisfaction - SimCare+</title>
+    <link href="<?= BASE_URL ?>public/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>public/css/fontawesome/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
@@ -79,7 +79,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="recommandation" id="recommandation">
                                 <label class="form-check-label h6" for="recommandation">
-                                    Je recommanderais DME Hospital à mes proches
+                                    Je recommanderais SimCare+ à mes proches
                                 </label>
                             </div>
                         </div>
@@ -129,7 +129,7 @@
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ratingContainers = document.querySelectorAll('.rating-stars');

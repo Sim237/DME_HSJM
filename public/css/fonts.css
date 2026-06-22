@@ -1,18 +1,101 @@
+/* ============================================================
+   POLICES LOCALES — DME Hospital
+   Toutes les polices sont servies depuis public/fonts/
+   ============================================================ */
+
+/* ===== Plus Jakarta Sans ===== */
 @font-face {
     font-family: 'Plus Jakarta Sans';
     font-style: normal;
     font-weight: 400;
-    src: url('../fonts/plus-jakarta-sans-v8-latin-regular.woff2') format('woff2');
+    font-display: swap;
+    src: url('../fonts/plus-jakarta-sans-latin-400-normal.woff2') format('woff2');
 }
 @font-face {
     font-family: 'Plus Jakarta Sans';
     font-style: normal;
     font-weight: 600;
-    src: url('../fonts/plus-jakarta-sans-v8-latin-600.woff2') format('woff2');
+    font-display: swap;
+    src: url('../fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2');
 }
 @font-face {
     font-family: 'Plus Jakarta Sans';
     font-style: normal;
     font-weight: 800;
-    src: url('../fonts/plus-jakarta-sans-v8-latin-800.woff2') format('woff2');
+    font-display: swap;
+    src: url('../fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2');
+}
+
+/* ===== Manrope ===== */
+@font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/manrope-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('../fonts/manrope-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/manrope-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../fonts/manrope-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('../fonts/manrope-latin-800-normal.woff2') format('woff2');
+}
+
+/* ===== Source Sans 3 ===== */
+@font-face {
+    font-family: 'Source Sans 3';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('../fonts/source-sans-3-latin-300-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Source Sans 3';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/source-sans-3-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Source Sans 3';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('../fonts/source-sans-3-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Source Sans 3';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/source-sans-3-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Source Sans 3';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../fonts/source-sans-3-latin-700-normal.woff2') format('woff2');
 }

@@ -1,13 +1,28 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 require_once __DIR__ . '/UnifiedController.php';
 require_once __DIR__ . '/../services/FacturationService.php';
+require_once __DIR__ . '/../services/AuditService.php';
 
 class FacturationController extends UnifiedController {
     private $facturationService;
-    
+    private $audit;
+
     public function __construct() {
         parent::__construct();
         $this->facturationService = new FacturationService();
+        $this->audit = new AuditService();
     }
     
     public function index() {
@@ -33,8 +48,14 @@ class FacturationController extends UnifiedController {
         $this->auth->requirePermission('parametres', 'write');
         
         $facture_id = $this->facturationService->genererFactureConsultation($consultation_id);
-        
+
         if ($facture_id) {
+            // ── Audit : facture générée ──
+            try {
+                $this->audit->log('CREATE', 'factures', (int)$facture_id,
+                    "Facture générée pour la consultation #" . (int)$consultation_id, null,
+                    ['consultation_id' => (int)$consultation_id, 'facture_id' => (int)$facture_id]);
+            } catch (Exception $e) { error_log('[Facturation::generer] Audit: ' . $e->getMessage()); }
             header('Location: ' . BASE_URL . 'facturation/voir/' . $facture_id);
         } else {
             header('Location: ' . BASE_URL . 'facturation?error=generation_failed');
@@ -77,14 +98,33 @@ class FacturationController extends UnifiedController {
         $database = new Database();
         $db = $database->getConnection();
         
+        $mode = $_POST['mode_paiement'] ?? 'especes';
         $sql = "UPDATE factures SET statut = 'payee', date_paiement = CURDATE(), mode_paiement = :mode
                 WHERE id = :id";
         $stmt = $db->prepare($sql);
         $stmt->execute([
             ':id' => $id,
-            ':mode' => $_POST['mode_paiement'] ?? 'especes'
+            ':mode' => $mode
         ]);
-        
+
+        // ── Audit : paiement de facture enregistré ──
+        try {
+            $fRow = $db->prepare("SELECT f.montant_total, f.patient_id, p.nom, p.prenom
+                                  FROM factures f JOIN patients p ON p.id = f.patient_id WHERE f.id = ?");
+            $fRow->execute([$id]);
+            $f = $fRow->fetch(PDO::FETCH_ASSOC);
+            $pNom    = $f ? trim(($f['nom'] ?? '') . ' ' . ($f['prenom'] ?? '')) : '';
+            $montant = $f['montant_total'] ?? null;
+            $desc = "Facture #$id réglée"
+                  . ($montant !== null ? ' — ' . number_format((float)$montant, 0, ',', ' ') . ' FCFA' : '')
+                  . ' (' . $mode . ')' . ($pNom ? " · patient : $pNom" : '');
+            $this->audit->log('UPDATE', 'factures', (int)$id, $desc, null, [
+                'patient'       => $pNom,
+                'montant'       => $montant,
+                'mode_paiement' => $mode,
+            ]);
+        } catch (Exception $e) { error_log('[Facturation::marquerPayee] Audit: ' . $e->getMessage()); }
+
         echo json_encode(['success' => true]);
     }
     

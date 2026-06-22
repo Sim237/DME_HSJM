@@ -1,217 +1,518 @@
 /* ============================================================================
-FICHIER : public/css/responsive.css
-Responsive Design Breakpoints - DME Hospital
+   RESPONSIVE.CSS — DME Hospital SimCare+
+   Adaptation complète mobile & tablette
+   Breakpoints : mobile < 576px | phablet 576-767px | tablette 768-991px | desktop ≥ 992px
 ============================================================================ */
 
-/* ===== MOBILE FIRST APPROACH ===== */
-
-/* Small devices (landscape phones, 576px and up) */
-@media (min-width: 576px) {
-    .container-sm {
-        max-width: 540px;
-    }
+/* ══════════════════════════════════════════════════════════════════════════
+   1. BARRE MOBILE  (hamburger + logo + accès rapide)
+   Affichée uniquement < 992px sur les pages avec sidebar standard
+══════════════════════════════════════════════════════════════════════════ */
+.mobile-topbar {
+    display: none;
+    background: #1a1d23;
+    padding: 10px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 1060;
+    box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-/* Medium devices (tablets, 768px and up) */
-@media (min-width: 768px) {
-    .container-md {
-        max-width: 720px;
-    }
-    
-    .stat-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+@media (max-width: 991px) {
+    .mobile-topbar { display: flex !important; }
 }
 
-/* Large devices (desktops, 992px and up) */
-@media (min-width: 992px) {
-    .container-lg {
-        max-width: 960px;
-    }
-    
-    .stat-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
+.mobile-topbar .mob-brand {
+    font-size: .85rem;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
 }
 
-/* Extra large devices (large desktops, 1200px and up) */
-@media (min-width: 1200px) {
-    .container-xl {
-        max-width: 1140px;
-    }
+.mobile-topbar .mob-btn {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
 }
+.mobile-topbar .mob-btn:hover { background: rgba(255,255,255,.2); }
+.mobile-topbar .mob-btn.danger { border-color: rgba(239,68,68,.4); color: #fca5a5; }
+.mobile-topbar .mob-btn.danger:hover { background: rgba(239,68,68,.25); }
 
-/* Extra extra large devices (1400px and up) */
-@media (min-width: 1400px) {
-    .container-xxl {
-        max-width: 1320px;
-    }
-}
-
-/* ===== MOBILE OPTIMIZATIONS (< 768px) ===== */
-@media (max-width: 767px) {
-    /* Typography adjustments */
-    h1 { font-size: 1.875rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
-    
-    /* Sidebar full width on mobile */
+/* ══════════════════════════════════════════════════════════════════════════
+   2. SIDEBAR — Tiroir offcanvas sur mobile & tablette
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
     .sidebar {
-        width: 100%;
-        max-width: 300px;
+        position: fixed !important;
+        top: 0 !important;
+        left: -280px !important;
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        z-index: 1055 !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+        overflow-y: auto !important;
+        transition: left .28s cubic-bezier(.4,0,.2,1), box-shadow .28s !important;
+        box-shadow: none !important;
     }
-    
-    /* Stack cards */
-    .stat-grid,
-    .card-grid {
-        grid-template-columns: 1fr;
+    .sidebar.sidebar-open {
+        left: 0 !important;
+        box-shadow: 8px 0 32px rgba(0,0,0,.45) !important;
     }
-    
-    /* Full width buttons */
-    .btn-group-mobile .btn {
-        width: 100%;
-        margin-bottom: 8px;
-    }
-    
-    /* Compact table */
-    .table-responsive {
-        font-size: 13px;
-    }
-    
-    .table thead {
+
+    /* Backdrop */
+    .sidebar-backdrop {
         display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.5);
+        z-index: 1054;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
     }
-    
-    .table tbody tr {
-        display: block;
-        margin-bottom: 16px;
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-md);
-    }
-    
-    .table tbody td {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px;
-        border-bottom: 1px solid var(--border-subtle);
-    }
-    
-    .table tbody td:last-child {
-        border-bottom: none;
-    }
-    
-    .table tbody td::before {
-        content: attr(data-label);
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 11px;
-        color: var(--text-secondary);
-    }
-    
-    /* Modal full screen on mobile */
-    .modal-dialog {
-        margin: 0;
-        max-width: 100%;
-        height: 100%;
-    }
-    
-    .modal-content {
-        height: 100%;
-        border-radius: 0;
-    }
-    
-    /* Topbar compact */
-    .topbar {
-        padding: 12px 16px;
-    }
-    
-    /* Form spacing */
-    .form-section {
-        padding: 16px;
-    }
-    
-    .form-section-title {
-        font-size: 16px;
-    }
-}
+    .sidebar-backdrop.active { display: block; }
 
-/* ===== TABLET OPTIMIZATIONS (768px - 991px) ===== */
-@media (min-width: 768px) and (max-width: 991px) {
-    .stat-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    /* La sidebar est masquée (<992px) — plus besoin de marge sur le contenu */
-    .sidebar {
-        width: 260px; /* Conserver la largeur normale quand elle est ouverte via toggle */
-    }
-
-    main,
-    .main-content {
+    /* Contenu principal : pleine largeur */
+    .row > main,
+    .row > .col,
+    .row > [class*="col-"] {
         margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
     }
 }
 
-/* ===== DESKTOP OPTIMIZATIONS (>= 992px) ===== */
-@media (min-width: 992px) {
-    /* Sidebar hover expansion */
-    .sidebar-collapsed {
-        width: 80px;
+/* ══════════════════════════════════════════════════════════════════════════
+   3. TOPBAR MÉDECIN (.top-nav)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    .top-nav {
+        padding: 10px 14px !important;
+        flex-wrap: wrap;
+        gap: 8px;
     }
-    
-    .sidebar-collapsed .nav-link span {
-        display: none;
+    .top-nav > div:first-child { flex: 1; min-width: 0; }
+    .top-nav img[style*="height: 35px"] { height: 26px !important; }
+    .top-nav .fw-bold.fs-5 { font-size: 1rem !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. TOPBAR DIRECTEUR (.dir-topbar)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .dir-topbar {
+        padding: 10px 14px !important;
+        flex-wrap: wrap;
+        gap: 8px;
     }
-    
-    .sidebar-collapsed:hover {
-        width: var(--sidebar-width);
+    .dir-topbar .d-flex.gap-2.align-items-center.flex-wrap { gap: 6px !important; }
+    #dir-clock { font-size: 1.1rem !important; }
+}
+
+@media (max-width: 575px) {
+    .dir-topbar > div:first-child .fw-bold { font-size: .9rem !important; }
+    .dir-topbar > div:first-child img { height: 26px !important; }
+    #dir-clock { display: none; }
+    .dir-topbar .btn { font-size: .72rem !important; padding: 4px 10px !important; }
+    .dir-content { padding: 10px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. COCKPIT INFIRMIER (.nav-nurse)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    .nav-nurse {
+        padding: 10px 14px !important;
+        flex-wrap: wrap;
+        gap: 8px;
     }
-    
-    .sidebar-collapsed:hover .nav-link span {
-        display: inline;
+    .nav-nurse h4 { font-size: .88rem !important; }
+    .nav-nurse small { font-size: .7rem !important; }
+    #clock { font-size: 1.1rem !important; }
+}
+
+@media (max-width: 575px) {
+    #clock { display: none; }
+    .nav-nurse > .d-flex:last-child .btn { font-size: .7rem !important; padding: 4px 10px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. COCKPIT URGENCES & ANESTHÉSIE (.cockpit-nav)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .cockpit-nav {
+        padding: 10px 14px !important;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .cockpit-stats { flex-wrap: wrap; gap: 5px !important; }
+    .stat-chip { font-size: .68rem !important; padding: 4px 8px !important; }
+    .cockpit-clock { font-size: 1.1rem !important; }
+    /* Onglets : scrollables */
+    .main-tabs { overflow-x: auto; white-space: nowrap; }
+    .main-tabs .nav-link { padding: 10px 12px !important; font-size: .78rem !important; }
+    .main-tabs .nav-item.ms-auto { display: none; } /* masquer les btns admission rapide sur mobile */
+}
+
+@media (max-width: 575px) {
+    #cockpit-clock { display: none; }
+    .cockpit-title > div > div:first-child { font-size: .88rem !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. TABLEAUX — défilement horizontal
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    /* Forcer le scroll horizontal sur toutes les tables (hors modals) */
+    .table-wrapper, .table-responsive { -webkit-overflow-scrolling: touch; }
+
+    /* Tables non encore wrappées */
+    .card-body > table,
+    .planning-card > table,
+    section > table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Taille min des colonnes d'actions */
+    table td:last-child, table th:last-child { white-space: nowrap; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. CARTES CHAMBRES & LITS (dashboard infirmier & urgences — onglet Lits)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .chambre-beds { gap: 8px !important; padding: 10px !important; }
+    .bed-tile { width: 90px !important; padding: 8px 6px !important; }
+    .bed-icon { font-size: 1.3rem !important; }
+    .bed-num  { font-size: .64rem !important; }
+    .bed-patient { font-size: .58rem !important; }
+}
+
+@media (max-width: 767px) {
+    /* Lits overview (donuts) : scroll horizontal */
+    .lits-overview {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        gap: 8px !important;
+    }
+    .lit-service-card { min-width: 120px !important; padding: 10px 12px !important; }
+    .lit-donut-wrap { width: 60px !important; height: 60px !important; }
+    .lit-donut-wrap svg { width: 60px !important; height: 60px !important; }
+    .lit-donut-text .num { font-size: .85rem !important; }
+
+    /* Chambre cards : full width sur mobile */
+    .col-12.col-sm-6.col-lg-4 { flex: 0 0 100% !important; max-width: 100% !important; }
+
+    .bed-tile { width: 80px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. DASHBOARD INFIRMIER — layout colonnes
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    /* Les 2 colonnes (4/12 + 8/12) passent en pleine largeur */
+    .col-lg-4, .col-lg-8 {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+    .planning-card { padding: 16px !important; }
+    .bed-grid { gap: 12px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   10. URGENCES — grille patients & flip-cards
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    .emergency-grid { grid-template-columns: 1fr !important; }
+    /* Désactiver le flip sur mobile (pas de hover) */
+    .flip-card { height: auto !important; perspective: none; }
+    .flip-card-inner { transform: none !important; transition: none; cursor: default; }
+    .card-back { display: none !important; }
+    .card-front {
+        position: static !important;
+        backface-visibility: visible !important;
+        border-radius: 14px !important;
+        height: auto !important;
+    }
+    /* Services & Soins : 1 colonne */
+    .service-cards-grid { grid-template-columns: 1fr !important; }
+    /* Actions patient */
+    .pat-card-actions { flex-wrap: wrap; }
+    .act-btn-more { margin-left: 0 !important; }
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+    .emergency-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .service-cards-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11. FORMULAIRES — éviter le zoom automatique iOS
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select,
+    .form-control,
+    .form-select {
+        font-size: 16px !important; /* empêche le zoom sur iOS */
+    }
+    .btn-lg { padding: .55rem 1.1rem !important; font-size: .88rem !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   12. MODALS — sheet du bas sur très petit écran
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 575px) {
+    .modal-dialog:not(.modal-fullscreen):not(.modal-xl):not(.modal-lg) {
+        margin: 0 !important;
+        max-width: 100vw !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+    .modal-dialog:not(.modal-fullscreen):not(.modal-xl):not(.modal-lg) .modal-content {
+        border-radius: 20px 20px 0 0 !important;
+    }
+    .modal-dialog:not(.modal-fullscreen):not(.modal-xl):not(.modal-lg) .modal-body {
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+    /* Modals grandes : quasi plein écran */
+    .modal-lg .modal-dialog,
+    .modal-xl .modal-dialog {
+        margin: 8px !important;
+        max-width: calc(100vw - 16px) !important;
     }
 }
 
-/* ===== PRINT RESPONSIVE ===== */
+/* ══════════════════════════════════════════════════════════════════════════
+   13. ESPACEMENT & PADDING GÉNÉRAL
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    .container-fluid { padding-left: 12px !important; padding-right: 12px !important; }
+    .p-4  { padding: 14px !important; }
+    .p-5  { padding: 18px !important; }
+    .px-4 { padding-left: 14px !important; padding-right: 14px !important; }
+    .dashboard-content { padding: 12px !important; }
+    .tab-content-area  { padding: 12px !important; }
+    .g-4 { --bs-gutter-x: .75rem !important; --bs-gutter-y: .75rem !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   14. TAILLE MINIMALE DES ZONES CLIQUABLES (touch targets)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .btn:not(.btn-sm)  { min-height: 38px; }
+    .btn-sm            { min-height: 34px; }
+    .nav-link-custom   { min-height: 44px; display: flex; align-items: center; }
+    .act-btn           { min-height: 36px; }
+    .bed-tile          { min-height: 90px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   15. TABLETTE PAYSAGE (768–991px) — ajustements fins
+══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 991px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .bed-tile { width: 95px !important; }
+    .dir-content { padding: 16px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   16. PRINT (inchangé)
+══════════════════════════════════════════════════════════════════════════ */
 @media print {
-    @page {
-        margin: 2cm;
-    }
-    
-    body {
-        font-size: 12pt;
-        line-height: 1.5;
-    }
-    
-    h1 { font-size: 24pt; }
-    h2 { font-size: 20pt; }
-    h3 { font-size: 16pt; }
-    
-    .page-break {
-        page-break-before: always;
-    }
-    
-    .no-break {
-        page-break-inside: avoid;
-    }
+    @page { margin: 2cm; }
+    body { font-size: 12pt; line-height: 1.5; }
+    .no-print, .sidebar, .mobile-topbar, .sidebar-backdrop { display: none !important; }
+    .page-break { page-break-before: always; }
+    .no-break { page-break-inside: avoid; }
+    h1 { font-size: 24pt; } h2 { font-size: 20pt; } h3 { font-size: 16pt; }
 }
 
-/* ===== ACCESSIBILITY ===== */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+        transition-duration: .01ms !important;
     }
 }
 
-/* High contrast mode */
-@media (prefers-contrast: high) {
-    .card,
-    .btn,
-    .form-control {
-        border-width: 2px;
+/* ══════════════════════════════════════════════════════════════════════════
+   17. COCKPIT MÉDECIN (.top-nav) — dashboard_medecin.php
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .top-nav {
+        height: auto !important;
+        padding: 8px 16px !important;
+        flex-wrap: wrap;
+        gap: 6px;
     }
+    .top-nav-left { gap: 8px !important; flex: 1; min-width: 0; }
+    .top-nav-sub  { display: none !important; }           /* masque "Hôpital Saint-Jean…" */
+    .top-nav-clock { display: none !important; }
+    .top-nav-service {
+        font-size: .65rem !important;
+        padding: 3px 8px !important;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .top-nav-doctor { font-size: .8rem !important; }
+    .top-nav-avatar { width: 34px !important; height: 34px !important; }
+    /* Groupe icônes secondaires */
+    .top-nav > .d-flex.align-items-center { flex-wrap: wrap; gap: 4px !important; }
+    /* Bouton "Nouveau patient" : icône uniquement */
+    .top-nav .top-nav-btn span { display: none; }
+    .top-nav .top-nav-btn[onclick*="ouvrirNouveauPatient"] {
+        width: 36px !important;
+        padding: 0 !important;
+    }
+    /* "Changer service" : icône uniquement */
+    #btnChangerService span { display: none !important; }
+    #btnChangerService { width: 36px !important; padding: 0 !important; justify-content: center !important; }
+}
+
+@media (max-width: 575px) {
+    .top-nav-left img[style*="height:38px"],
+    .top-nav-left img[style*="height: 38px"] { height: 28px !important; }
+    /* Séparateur vertical masqué */
+    .top-nav-left > div[style*="width:1px"] { display: none !important; }
+    .top-nav { padding: 7px 12px !important; }
+    .dashboard-content { padding: 10px 12px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   18. COCKPIT URGENCES (.cockpit-header) — urgences/dashboard_medecin.php
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 991px) {
+    .cockpit-header {
+        height: auto !important;
+        padding: 8px 16px !important;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    #digital-clock { font-size: 1.3rem !important; }
+    /* Barre de recherche : cachée — l'onglet principal garde sa propre recherche */
+    #globalSearchWrap { display: none !important; }
+    /* Bouton NOUVELLE ADMISSION : icône seule */
+    .btn-new-adm span,
+    .btn-new-adm .btn-label { display: none; }
+    .btn-new-adm {
+        padding: 9px 12px !important;
+        border-radius: 50% !important;
+        width: 40px; height: 40px;
+        justify-content: center;
+    }
+    /* "Changer service" : icône seule */
+    #btnChangerServiceUrg #btnChangerServiceUrgLabel { display: none !important; }
+    #btnChangerServiceUrg { padding: 8px 10px !important; }
+    /* Stats bar */
+    .stats-bar {
+        padding: 10px 12px !important;
+        gap: 8px !important;
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .stats-bar::-webkit-scrollbar { display: none; }
+    .stat-box { min-width: 110px !important; padding: 10px 12px !important; flex-shrink: 0; }
+    .stat-num { font-size: 1.4rem !important; }
+    .stat-icon { width: 36px !important; height: 36px !important; font-size: 1.1rem !important; }
+    /* Onglets principaux */
+    .main-tabs { top: auto !important; }
+    .tab-pane-body { padding: 12px !important; }
+}
+
+@media (max-width: 575px) {
+    .cockpit-header { padding: 7px 12px !important; }
+    #digital-clock { display: none !important; }
+    .cockpit-header > div:first-child > div:last-child > div:first-child { font-size: .85rem !important; }
+    /* Logo plus petit */
+    .cockpit-header img[style*="height:36px"] { height: 28px !important; }
+    /* Groupe de boutons secondaires (pill icônes) */
+    .cockpit-header > div:last-child { gap: 4px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   19. WIDGETS KPI / STAT CARDS — toutes les pages dashboard
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    /* Row de widgets Bootstrap : 2 colonnes sur phablet */
+    .row.g-3 > .col-md-3,
+    .row.g-3 > .col-lg-3 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+    /* 1 colonne sur très petit écran */
+}
+@media (max-width: 400px) {
+    .row.g-3 > .col-md-3,
+    .row.g-3 > .col-lg-3 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   20. ONGLETS (tabs) — scroll horizontal natif sur mobile
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    .nav-tabs, .main-tabs ul, ul.nav-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 1px;
+    }
+    .nav-tabs::-webkit-scrollbar,
+    .main-tabs ul::-webkit-scrollbar { display: none; }
+    .nav-tabs .nav-link,
+    .main-tabs .nav-link {
+        white-space: nowrap;
+        font-size: .75rem !important;
+        padding: 9px 12px !important;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   21. CARTES PATIENTS (patient-wait-card, neo cards, etc.)
+══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 575px) {
+    .patient-wait-card { flex-wrap: wrap; gap: 8px !important; padding: 10px 12px !important; }
+    .pw-avatar { width: 36px !important; height: 36px !important; font-size: .8rem !important; }
+    /* Tableaux urgences : cacher colonnes moins prioritaires */
+    .table-urg th:nth-child(5),
+    .table-urg td:nth-child(5) { display: none; } /* Notes */
 }

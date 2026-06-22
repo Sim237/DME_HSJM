@@ -2,13 +2,25 @@
 <html>
 <head>
     <title>Formations Personnel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>public/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-3">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3>Formations Personnel</h3>
-            <?php if(isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+            <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ if(isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                 <a href="/modules/formation/creer" class="btn btn-primary">Créer Formation</a>
             <?php endif; ?>
         </div>
@@ -113,7 +125,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>public/js/bootstrap.bundle.min.js"></script>
     <script>
         function inscrire(formationId) {
             // Simuler inscription à la première session disponible

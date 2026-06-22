@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 class BackupService {
     private $db;
     private $backup_dir;
@@ -20,17 +32,23 @@ class BackupService {
             $filename = 'full_backup_' . date('Y-m-d_H-i-s') . '.sql';
             $filepath = $this->backup_dir . $filename;
             
-            // Commande mysqldump
+            // Fichier de config temporaire pour éviter le mot de passe en clair dans ps aux
+            $cnfFile = tempnam(sys_get_temp_dir(), 'dme_bkp_');
+            file_put_contents($cnfFile, "[client]\nhost=" . DB_HOST
+                . "\nuser=" . DB_USER . "\npassword=" . DB_PASS . "\n");
+            chmod($cnfFile, 0600);
+
             $command = sprintf(
-                'mysqldump --host=%s --user=%s --password=%s --single-transaction --routines --triggers %s > %s',
-                DB_HOST,
-                DB_USER,
-                DB_PASS,
-                DB_NAME,
+                'mysqldump --defaults-extra-file=%s --single-transaction --routines --triggers %s > %s',
+                escapeshellarg($cnfFile),
+                escapeshellarg(DB_NAME),
                 escapeshellarg($filepath)
             );
-            
+
             exec($command, $output, $return_code);
+
+            // Supprimer immédiatement le fichier de config temporaire
+            @unlink($cnfFile);
             
             if ($return_code === 0 && file_exists($filepath)) {
                 $file_size = filesize($filepath);

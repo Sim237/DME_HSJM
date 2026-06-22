@@ -1,4 +1,16 @@
-<?php if (empty($soins_du_jour)): ?>
+<?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ if (empty($soins_du_jour)): ?>
     <div class="text-center py-3 text-muted small">Aucun soin planifié pour le moment.</div>
 <?php else: foreach ($soins_du_jour as $s): ?>
     <div class="task-item shadow-sm <?= $s['execute'] ? 'opacity-50' : '' ?>"

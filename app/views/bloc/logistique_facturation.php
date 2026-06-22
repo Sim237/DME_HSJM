@@ -21,7 +21,19 @@
 
                     <div id="kitList" class="row g-3">
                         <!-- Exemple de Kit disponible -->
-                        <?php foreach($kits as $k): ?>
+                        <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ foreach($kits as $k): ?>
                         <div class="col-md-6" id="kit-<?= $k['code_kit'] ?>">
                             <div class="card kit-card shadow-sm p-3 <?= $k['statut'] == 'UTILISE' ? 'used' : '' ?>">
                                 <div class="d-flex justify-content-between align-items-center">

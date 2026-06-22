@@ -23,9 +23,36 @@
                                             <label class="form-label small fw-bold">PRÉNOM <span class="text-danger">*</span></label>
                                             <input type="text" name="prenom" class="form-control form-control-lg border-2" required>
                                         </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">DATE DE NAISSANCE <span class="text-danger">*</span></label>
-                                            <input type="date" name="date_naissance" class="form-control border-2" required>
+                                        <!-- DATE DE NAISSANCE / ÂGE ESTIMATIF -->
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                                <label class="form-label small fw-bold mb-0">DATE DE NAISSANCE / ÂGE <span class="text-danger">*</span></label>
+                                                <div class="d-flex rounded-pill border overflow-hidden ms-auto" style="font-size:.75rem">
+                                                    <button type="button" id="btnModeDdn" onclick="setDobMode('date')"
+                                                        class="px-3 py-1 border-0 fw-bold bg-primary text-white" style="transition:.2s">
+                                                        <i class="bi bi-calendar3 me-1"></i>Date
+                                                    </button>
+                                                    <button type="button" id="btnModeAge" onclick="setDobMode('age')"
+                                                        class="px-3 py-1 border-0 fw-bold bg-white text-muted" style="transition:.2s">
+                                                        <i class="bi bi-123 me-1"></i>Âge estimatif
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="fieldDate">
+                                                <input type="date" name="date_naissance" id="inputDdn"
+                                                       class="form-control border-2" placeholder="JJ/MM/AAAA">
+                                            </div>
+                                            <div id="fieldAge" style="display:none">
+                                                <div class="input-group">
+                                                    <input type="number" name="age_estimatif" id="inputAge"
+                                                           class="form-control border-2" placeholder="Ex : 45"
+                                                           min="0" max="120"
+                                                           oninput="estimateDob(this.value)">
+                                                    <span class="input-group-text bg-light fw-bold text-muted">ans</span>
+                                                </div>
+                                                <input type="hidden" name="date_naissance" id="hiddenDdn">
+                                                <div id="dobEstimate" class="mt-1" style="font-size:.75rem;color:#64748b"></div>
+                                            </div>
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold">SEXE <span class="text-danger">*</span></label>
@@ -93,3 +120,46 @@
         </div>
     </div>
 </div>
+
+<script>
+function setDobMode(mode) {
+    var isDate = (mode === 'date');
+    // Bascule affichage
+    document.getElementById('fieldDate').style.display = isDate ? '' : 'none';
+    document.getElementById('fieldAge').style.display  = isDate ? 'none' : '';
+    // Bascule boutons
+    document.getElementById('btnModeDdn').className = 'px-3 py-1 border-0 fw-bold ' + (isDate ? 'bg-primary text-white' : 'bg-white text-muted');
+    document.getElementById('btnModeAge').className = 'px-3 py-1 border-0 fw-bold ' + (!isDate ? 'bg-primary text-white' : 'bg-white text-muted');
+    // Gérer required + name pour éviter les doublons
+    var inputDdn   = document.getElementById('inputDdn');
+    var inputAge   = document.getElementById('inputAge');
+    var hiddenDdn  = document.getElementById('hiddenDdn');
+    if (isDate) {
+        inputDdn.name     = 'date_naissance';
+        inputDdn.required = true;
+        if (hiddenDdn) hiddenDdn.name = '';
+        if (inputAge)  { inputAge.value = ''; inputAge.required = false; }
+        document.getElementById('dobEstimate').textContent = '';
+    } else {
+        inputDdn.name     = '';
+        inputDdn.required = false;
+        inputDdn.value    = '';
+        if (hiddenDdn) hiddenDdn.name = 'date_naissance';
+        if (inputAge)  inputAge.required = true;
+    }
+}
+
+function estimateDob(age) {
+    var hiddenDdn = document.getElementById('hiddenDdn');
+    var lbl       = document.getElementById('dobEstimate');
+    age = parseInt(age, 10);
+    if (!isNaN(age) && age > 0 && age <= 120) {
+        var year = new Date().getFullYear() - age;
+        hiddenDdn.value = year + '-01-01';
+        lbl.innerHTML = '<i class="bi bi-info-circle me-1"></i>Date estimée retenue : <strong>01/01/' + year + '</strong>';
+    } else {
+        hiddenDdn.value = '';
+        lbl.textContent = '';
+    }
+}
+</script>

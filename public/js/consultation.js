@@ -1,3 +1,11 @@
+﻿// ===== UTILITAIRE — Échappement HTML (anti-XSS) =====
+function escHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, c => (
+        {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]
+    ));
+}
+
 // ===== RECHERCHE DE PATIENTS =====
 let searchTimeout;
 const searchPatient = document.getElementById('searchPatient');
@@ -24,148 +32,10 @@ function performSearch(term) {
     fetch(`${BASE_URL}consultation/search-patients?term=${encodeURIComponent(term)}`)
         .then(response => response.json())
         .then(data => {
-            displaySearchResults(data);
-            hideLoader();
-        })
-        .catch(error => {
-            console.error('Erreur de recherche:', error);
-            showNotification('Erreur lors de la recherche', 'error');
-            hideLoader();
-        });
-}
-
-function displaySearchResults(patients) {
-    const resultsDiv = document.getElementById('searchResults');
-    
-    if (!patients || patients.length === 0) {
-        resultsDiv.innerHTML = '<div class="p-3 text-muted">Aucun patient trouvé</div>';
-        resultsDiv.classList.add('show');
-        return;
-    }
-    
-    let html = '';
-    patients.forEach(patient => {
-        const age = calculateAge(patient.date_naissance);
-        html += `
-            <div class="search-result-item" onclick="selectPatient(${patient.id})">
-                <span class="patient-name">
-                    ${patient.prenom} ${patient.nom}
-                </span>
-                <div class="patient-details">
-                    <span class="badge bg-secondary">${patient.numero_dossier}</span>
-                    <span class="ms-2">${patient.sexe === 'M' ? 'Homme' : 'Femme'}</span>
-                    <span class="ms-2">${age} ans</span>
-                    ${patient.telephone ? `<span class="ms-2"><i class="fas fa-phone"></i> ${patient.telephone}</span>` : ''}
-                </div>
-            </div>
-        `;
-    });
-    
-    resultsDiv.innerHTML = html;
-    resultsDiv.classList.add('show');
-}
-
-function hideSearchResults() {
-    const resultsDiv = document.getElementById('searchResults');
-    if (resultsDiv) {
-        resultsDiv.classList.remove('show');
-        resultsDiv.innerHTML = '';
-    }
-}
-
-function selectPatient(patientId) {
-    hideSearchResults();
-    window.location.href = `${BASE_URL}consultation/dossier-patient/${patientId}`;
-}
-
-function calculateAge(birthDate) {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-        age--;
-    }
-    
-    return age;
-}
-
-// Fermer les résultats si on clique en dehors
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.search-box')) {
-        hideSearchResults();
-    }
-});
-
-// ===== GESTION DES EXAMENS PARACLINIQUES =====
-const formDemandeExamen = document.getElementById('formDemandeExamen');
-
-if (formDemandeExamen) {
-    formDemandeExamen.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        formData.append('consultation_id', document.querySelector('[name="consultation_id"]')?.value);
-        
-        showLoader();
-        
-        fetch(`${BASE_URL}consultation/demander-examen`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            hideLoader();
-            if (data.success) {
-                showNotification('Examen demandé avec succès', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('modalDemandeExamen')).hide();
-                clearForm('formDemandeExamen');
-                refreshExamensList();
-            } else {
-                showNotification(data.message || 'Erreur lors de la demande', 'error');
-            }
-        })
-        .catch(error => {
-            hideLoader();
-            showNotification('Erreur lors de la demande d\'examen', 'error');
-        });
-    });
-}
-
-function supprimerExamen(examenId) {
-    confirmAction('Êtes-vous sûr de vouloir supprimer cette demande d\'examen ?', () => {
-        showLoader();
-        
-        fetch(`${BASE_URL}consultation/supprimer-examen/${examenId}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            hideLoader();
-            if (data.success) {
-                showNotification('Examen supprimé', 'success');
-                refreshExamensList();
-            } else {
-                showNotification('Erreur lors de la suppression', 'error');
-            }
-        });
-    });
-}
-
-function refreshExamensList() {
-    const consultationId = document.querySelector('[name="consultation_id"]')?.value;
-    if (!consultationId) return;
-    
-    fetch(`${BASE_URL}consultation/liste-examens/${consultationId}`)
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour la liste des examens
             const listExamens = document.getElementById('listExamens');
-            if (listExamens && data.html) {
-                listExamens.innerHTML = data.html;
-            }
-        });
+            if (listExamens && data.html) listExamens.innerHTML = data.html;
+        })
+        .catch(err => console.error('[refreshExamensList]', err));
 }
 
 // ===== GESTION DES MÉDICAMENTS (ORDONNANCE) =====
@@ -213,18 +83,23 @@ function displayMedicamentResults(medicaments) {
     
     let html = '';
     medicaments.forEach(med => {
-        const stockClass = med.quantite_disponible > 10 ? 'success' : 
+        const stockClass = med.quantite_disponible > 10 ? 'success' :
                           med.quantite_disponible > 0 ? 'warning' : 'danger';
+        const nomE   = escHtml(med.nom_commercial);
+        const dciE   = escHtml(med.dci);
+        const dosE   = escHtml(med.dosage);
+        const stockQ = parseInt(med.quantite_disponible, 10);
         html += `
-            <div class="search-result-item" onclick="selectMedicament(${med.id}, '${med.nom_commercial}', '${med.dci}', '${med.dosage}', ${med.quantite_disponible})">
-                <strong>${med.nom_commercial}</strong>
+            <div class="search-result-item"
+                 onclick="selectMedicament(${parseInt(med.id,10)}, ${JSON.stringify(med.nom_commercial)}, ${JSON.stringify(med.dci)}, ${JSON.stringify(med.dosage)}, ${stockQ})">
+                <strong>${nomE}</strong>
                 <br>
-                <small class="text-muted">${med.dci} - ${med.dosage}</small>
-                <span class="badge bg-${stockClass} float-end">Stock: ${med.quantite_disponible}</span>
+                <small class="text-muted">${dciE} - ${dosE}</small>
+                <span class="badge bg-${stockClass} float-end">Stock: ${stockQ}</span>
             </div>
         `;
     });
-    
+
     resultsDiv.innerHTML = html;
 }
 
@@ -238,9 +113,9 @@ function selectMedicament(id, nom, dci, dosage, stock) {
     const stockText = stock > 0 ? `Stock disponible: ${stock}` : 'Rupture de stock!';
     
     document.getElementById('medicamentInfo').innerHTML = `
-        <strong>${nom}</strong><br>
-        <small>${dci} - ${dosage}</small><br>
-        <span class="badge bg-${stockClass}">${stockText}</span>
+        <strong>${escHtml(nom)}</strong><br>
+        <small>${escHtml(dci)} - ${escHtml(dosage)}</small><br>
+        <span class="badge bg-${stockClass}">${escHtml(stockText)}</span>
     `;
     document.getElementById('medicamentInfo').classList.remove('d-none');
 }
@@ -312,7 +187,8 @@ function refreshPrescriptionList() {
             if (listPrescription && data.html) {
                 listPrescription.innerHTML = data.html;
             }
-        });
+        })
+        .catch(err => console.error('[refreshPrescriptionList]', err));
 }
 
 // ===== GESTION DES SOINS =====
@@ -372,7 +248,8 @@ function refreshSoinsList() {
             if (listeSoins && data.html) {
                 listeSoins.innerHTML = data.html;
             }
-        });
+        })
+        .catch(err => console.error('[refreshSoinsList]', err));
 }
 
 // ===== SAUVEGARDE BROUILLON =====
@@ -399,3 +276,5 @@ function saveDraft() {
 
 // Auto-save toutes les 2 minutes
 setInterval(saveDraft, 120000);
+
+

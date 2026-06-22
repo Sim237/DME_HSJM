@@ -1,4 +1,18 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
+
+require_once __DIR__ . '/../../config/database.php';
 
 class HospitalisationService {
 
@@ -197,7 +211,7 @@ class HospitalisationService {
 
     public static function enregistrerDecisionHospitalisation($consultation_id, $decision, $medecin_id, $justification = '') {
         try {
-            $db = DataService::getInstance()->getConnection();
+            $db = (new Database())->getConnection();
 
             $stmt = $db->prepare("
                 INSERT INTO decisions_hospitalisation
@@ -221,17 +235,33 @@ class HospitalisationService {
      */
     public static function assignLitNurse($patient_id, $service_id, $lit_id, $infirmier_id) {
         try {
-            $db = DataService::getInstance()->getConnection();
+            $db = (new Database())->getConnection();
             $db->beginTransaction();
 
-            // Create hospitalisation
-            $stmtH = $db->prepare("INSERT INTO hospitalisations (patient_id, service_id, lit_id, statut, infirmier_admission, date_admission) VALUES (?, ?, ?, 'active', ?, NOW())");
-            $stmtH->execute([$patient_id, $service_id, $lit_id, $infirmier_id]);
-            $hosp_id = $db->lastInsertId();
+            // Check for existing provisional hospitalisation (created by doctor without a lit)
+            $stmtExist = $db->prepare("SELECT id FROM hospitalisations WHERE patient_id = ? AND statut = 'en_cours' ORDER BY id DESC LIMIT 1");
+            $stmtExist->execute([$patient_id]);
+            $existId = $stmtExist->fetchColumn();
+
+            if ($existId) {
+                // Update provisional row with actual lit, service and responsible person
+                $db->prepare("UPDATE hospitalisations SET service_id = ?, lit_id = ?, medecin_responsable = ?, date_admission = NOW() WHERE id = ?")
+                   ->execute([$service_id, $lit_id, (int)$infirmier_id, $existId]);
+                $hosp_id = $existId;
+            } else {
+                // Create new hospitalisation row
+                $stmtH = $db->prepare("INSERT INTO hospitalisations (patient_id, service_id, lit_id, statut, medecin_responsable, date_admission) VALUES (?, ?, ?, 'en_cours', ?, NOW())");
+                $stmtH->execute([$patient_id, $service_id, $lit_id, (int)$infirmier_id]);
+                $hosp_id = $db->lastInsertId();
+            }
 
             // Update lit occupancy
-            $db->prepare("UPDATE lits SET occupied_by_patient_id = ?, occupied_since = NOW() WHERE id = ?")
+            $db->prepare("UPDATE lits SET statut = 'OCCUPE', occupied_by_patient_id = ?, occupied_since = NOW() WHERE id = ?")
                ->execute([$patient_id, $lit_id]);
+
+            // Update patient status to HOSPITALISE
+            $db->prepare("UPDATE patients SET statut_hosp = 'HOSPITALISE', statut_parcours = 'HOSPITALISE' WHERE id = ?")
+               ->execute([$patient_id]);
 
             // Update urgences_admissions a_hospitaliser = 0
             $db->prepare("UPDATE urgences_admissions SET a_hospitaliser = 0 WHERE patient_id = ?")

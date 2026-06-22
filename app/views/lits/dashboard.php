@@ -1,4 +1,16 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+<?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <style>
     .app-wrapper { display: flex; width: 100%; min-height: 100vh; background-color: #f1f5f9; }
@@ -7,6 +19,8 @@
     .bed-icon { width: 55px; height: 55px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: 0.2s; border: 2px solid transparent; }
     .status-available { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
     .status-occupied { background: #fef2f2; color: #dc2626; border-color: #fecdd3; }
+    .bed-externe { background: #fffbeb !important; color: #d97706 !important; border-color: #fde68a !important; cursor: default; }
+    .bed-externe:hover { filter: none !important; }
     .status-cleaning { background: #fffbeb; color: #d97706; border-color: #fef3c7; }
     .gender-indicator { position: absolute; top: -5px; right: -5px; font-size: 0.7rem; padding: 2px 5px; border-radius: 50%; color: white; }
     .bed-name { font-size: 0.65rem; font-weight: 800; margin-top: 3px; }
@@ -36,13 +50,31 @@
                                     <?php foreach ($lits as $lit):
                                         $s = strtoupper($lit['statut']);
                                         $class = ($s == 'OCCUPE') ? 'status-occupied' : (($s == 'NETTOYAGE') ? 'status-cleaning' : 'status-available');
+                                        // Détecter si le patient appartient à un service différent
+                                        $isExterne = $s === 'OCCUPE'
+                                            && !empty($lit['patient_service_id'])
+                                            && !empty($lit['lit_service_id'])
+                                            && (int)$lit['patient_service_id'] !== (int)$lit['lit_service_id'];
                                     ?>
-                                        <div class="bed-icon <?= $class ?>" onclick='openBedAction(<?= json_encode($lit) ?>)'>
-                                            <?php if($s == 'OCCUPE'): ?>
-                                                <span class="gender-indicator <?= $lit['sexe'] == 'M' ? 'bg-primary' : 'bg-danger' ?>"><i class="bi bi-person-fill"></i></span>
+                                        <div class="bed-icon <?= $class ?><?= $isExterne ? ' bed-externe' : '' ?>"
+                                             onclick='openBedAction(<?= json_encode($lit) ?>, <?= $isExterne ? 'true' : 'false' ?>)'
+                                             title="<?= $isExterne ? 'Patient du service ' . htmlspecialchars($lit['patient_service_nom'] ?? '?') : $lit['nom_lit'] ?>">
+                                            <?php if($s == 'OCCUPE' && !$isExterne): ?>
+                                                <span class="gender-indicator <?= $lit['sexe'] == 'M' ? 'bg-primary' : 'bg-danger' ?>">
+                                                    <i class="bi bi-person-fill"></i>
+                                                </span>
+                                            <?php elseif ($isExterne): ?>
+                                                <span class="gender-indicator bg-warning" title="Hébergé - service externe">
+                                                    <i class="bi bi-arrow-left-right" style="font-size:.55rem"></i>
+                                                </span>
                                             <?php endif; ?>
                                             <i class="bi bi-bed-front fs-4"></i>
                                             <span class="bed-name"><?= $lit['nom_lit'] ?></span>
+                                            <?php if ($isExterne): ?>
+                                            <span style="font-size:.5rem;font-weight:900;color:#d97706;line-height:1;margin-top:1px;">
+                                                <?= mb_strtoupper(mb_substr($lit['patient_service_nom'] ?? 'EXT', 0, 4)) ?>
+                                            </span>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -85,19 +117,48 @@
 let currentLit = null;
 const modal = new bootstrap.Modal(document.getElementById('modalBedAction'));
 
-function openBedAction(lit) {
+function openBedAction(lit, isExterne = false) {
     currentLit = lit;
     document.getElementById('actionLitTitle').innerText = "Lit " + lit.nom_lit;
     document.getElementById('patientArea').classList.add('d-none');
     document.getElementById('admissionArea').classList.add('d-none');
 
+    // Retirer le bloc externe s'il existe déjà
+    const oldExterne = document.getElementById('externeArea');
+    if (oldExterne) oldExterne.remove();
+
+    if (isExterne) {
+        // Lit occupé par un patient d'un autre service → lecture seule
+        document.getElementById('modalHeader').className = "modal-header text-white border-0";
+        document.getElementById('modalHeader').style.background = "#d97706";
+        const externeDiv = document.createElement('div');
+        externeDiv.id = 'externeArea';
+        externeDiv.innerHTML = `
+            <div class="text-center py-2">
+                <div class="mb-2" style="font-size:2rem;">🔒</div>
+                <p class="small text-muted mb-1">Lit occupé par</p>
+                <h6 class="fw-bold text-dark mb-1">${lit.nom || '—'} ${lit.prenom || ''}</h6>
+                <span class="badge rounded-pill mb-3" style="background:#fef3c7;color:#92400e;font-size:.72rem;">
+                    Service : ${lit.patient_service_nom || '?'}
+                </span>
+                <p class="small text-muted" style="font-size:.75rem;">
+                    Ce patient appartient à un autre service.<br>Seul son service peut gérer ce dossier.
+                </p>
+            </div>`;
+        document.querySelector('#modalBedAction .modal-body').appendChild(externeDiv);
+        modal.show();
+        return;
+    }
+
     if(lit.statut === 'OCCUPE') {
         document.getElementById('modalHeader').className = "modal-header bg-danger text-white border-0";
+        document.getElementById('modalHeader').style.background = "";
         document.getElementById('patientArea').classList.remove('d-none');
-        document.getElementById('pNameDisplay').innerText = lit.nom + " " + lit.prenom;
+        document.getElementById('pNameDisplay').innerText = (lit.nom || '') + " " + (lit.prenom || '');
         document.getElementById('btnBillet').href = `<?= BASE_URL ?>lits/billet-sortie/${lit.patient_id}`;
     } else {
         document.getElementById('modalHeader').className = "modal-header bg-success text-white border-0";
+        document.getElementById('modalHeader').style.background = "";
         document.getElementById('admissionArea').classList.remove('d-none');
     }
     modal.show();

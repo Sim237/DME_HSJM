@@ -14,6 +14,18 @@
                     <h5 class="fw-bold border-bottom pb-2">Calcul du Score d'Aldrete</h5>
 
                     <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
                     $criteres = [
                         'motricite' => ['Label' => 'Motricité', 'options' => ['Immobile', 'Bouge 2 membres', 'Bouge 4 membres']],
                         'respiration' => ['Label' => 'Respiration', 'options' => ['Apnée', 'Dyspnée/Limitée', 'Respire profondément']],

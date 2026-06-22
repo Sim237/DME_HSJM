@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 require_once __DIR__ . '/../../config/database.php';
 
 class Hospitalisation {
@@ -12,7 +24,7 @@ class Hospitalisation {
     // Récupérer les infos complètes de l'admission (Patient + Lit + Service)
     public function getDossierAdmission($admission_id) {
         $sql = "SELECT a.*, p.nom, p.prenom, p.dossier_numero, p.date_naissance, p.sexe,
-                       l.numero as lit_numero, l.chambre, s.nom as service_nom
+                       l.numero as lit_numero, l.chambre, s.nom_service as service_nom
                 FROM admissions a
                 JOIN patients p ON a.patient_id = p.id
                 JOIN lits l ON a.lit_id = l.id
@@ -113,7 +125,7 @@ class Hospitalisation {
      public function getPatientsHospitalises() {
         $sql = "SELECT p.id as patient_id, p.nom, p.prenom, p.dossier_numero, p.date_naissance, p.sexe,
                        a.id as admission_id, a.date_admission, a.motif_admission,
-                       l.numero as lit_numero, l.chambre, s.nom as service_nom
+                       l.numero as lit_numero, l.chambre, s.nom_service as service_nom
                 FROM patients p
                 JOIN admissions a ON p.id = a.patient_id
                 JOIN lits l ON a.lit_id = l.id

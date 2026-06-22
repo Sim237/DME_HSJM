@@ -7,7 +7,19 @@
                 <div class="col-md-6">
                     <label>Choisir la Salle</label>
                     <select name="salle_id" class="form-select" required>
-                        <?php foreach($salles_disponibles as $s): ?>
+                        <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ foreach($salles_disponibles as $s): ?>
                             <option value="<?= $s['id'] ?>"><?= $s['nom_salle'] ?></option>
                         <?php endforeach; ?>
                     </select>

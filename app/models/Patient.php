@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 /* ============================================================================
    FICHIER : Patient.php
    Modèle pour la gestion des patients
@@ -97,16 +109,22 @@ class Patient {
 
     public function search($query) {
         $sql = "SELECT * FROM patients
-                WHERE (nom LIKE :query
-                   OR prenom LIKE :query
-                   OR dossier_numero LIKE :query)
+                WHERE (nom           LIKE :q1
+                   OR prenom         LIKE :q2
+                   OR dossier_numero LIKE :q3
+                   OR telephone      LIKE :q4)
                    AND actif = 1
                 ORDER BY nom, prenom
                 LIMIT 20";
 
         $stmt = $this->db->prepare($sql);
         $searchTerm = '%' . $query . '%';
-        $stmt->execute([':query' => $searchTerm]);
+        $stmt->execute([
+            ':q1' => $searchTerm,
+            ':q2' => $searchTerm,
+            ':q3' => $searchTerm,
+            ':q4' => $searchTerm,
+        ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -245,14 +263,16 @@ class Patient {
     // --- UTILITAIRES PRIVÉS ---
 
     private function genererNumeroDossier() {
-        $annee = date('Y');
-        $sql = "SELECT COUNT(*) as total FROM patients WHERE YEAR(created_at) = :annee";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':annee' => $annee]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        $numero = $result['total'] + 1;
-        return 'HSJM-' . $annee . '-' . str_pad($numero, 5, '0', STR_PAD_LEFT);
+        $annee2 = date('y');
+        $prefix = "HSJM$annee2";
+        // MAX() au lieu de COUNT() : résistant aux suppressions
+        $stmt = $this->db->prepare(
+            "SELECT COALESCE(MAX(CAST(SUBSTRING(dossier_numero, 7) AS UNSIGNED)), 0)
+             FROM patients WHERE dossier_numero LIKE ?"
+        );
+        $stmt->execute(["$prefix%"]);
+        $next = (int)$stmt->fetchColumn() + 1;
+        return $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
     }
 
     // À ajouter dans app/models/Patient.php

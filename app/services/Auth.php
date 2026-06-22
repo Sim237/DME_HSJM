@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 /* ============================================================================
 FICHIER : app/services/Auth.php
 SERVICE D'AUTHENTIFICATION ET GESTION DES ACCÈS PAR SERVICE ET PERMISSIONS
@@ -29,9 +41,9 @@ class Auth {
             SELECT u.*, s.nom_service
             FROM users u
             LEFT JOIN services s ON u.service_id = s.id
-            WHERE (u.username = :id OR u.email = :id) AND u.statut = 1
+            WHERE (u.username = :id_user OR u.email = :id_email) AND u.actif = 1
         ");
-        $stmt->execute([':id' => $identifiant]);
+        $stmt->execute([':id_user' => $identifiant, ':id_email' => $identifiant]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
@@ -52,14 +64,17 @@ class Auth {
         // Sécurité : Régénérer l'ID de session
         session_regenerate_id(true);
 
-        $_SESSION['logged_in']    = true;
-        $_SESSION['user_id']      = $user['id'];
-        $_SESSION['username']     = $user['username'];
-        $_SESSION['user_nom']     = $user['nom'];
-        $_SESSION['user_prenom']  = $user['prenom'];
-        $_SESSION['user_role']    = strtoupper($user['role']); // On force en majuscules pour la cohérence
-        $_SESSION['service_id']   = $user['service_id'];
-        $_SESSION['nom_service']  = $user['nom_service'] ?? 'Administration';
+        $_SESSION['logged_in']           = true;
+        $_SESSION['user_id']             = $user['id'];
+        $_SESSION['username']            = $user['username'];
+        $_SESSION['user_nom']            = $user['nom'];
+        $_SESSION['user_prenom']         = $user['prenom'];
+        $_SESSION['user_role']           = strtoupper($user['role']);
+        $_SESSION['service_id']          = $user['service_id'];
+        $_SESSION['nom_service']         = $user['nom_service'] ?? 'Administration';
+        $_SESSION['specialite']          = strtolower(trim($user['specialite'] ?? ''));
+        // Forçage changement MDP (positionné par l'admin)
+        $_SESSION['must_change_password'] = !empty($user['must_change_password']);
 
         return true;
     }
@@ -105,10 +120,42 @@ class Auth {
         $role = $_SESSION['user_role'];
         $permission = strtolower($permission);
 
-        // 1. BYPASS TOTAL POUR L'ADMIN :
-        // Gère les deux variantes possibles dans la base
-        if ($role === 'ADMIN' || $role === 'ADMINISTRATEUR') {
+        // 1. BYPASS TOTAL POUR L'ADMIN ET LE SUPER_ADMIN :
+        if (in_array($role, ['ADMIN', 'ADMINISTRATEUR', 'SUPER_ADMIN'])) {
             return true;
+        }
+
+        // 1b. BYPASS POUR LES RÔLES NON ENCORE DANS L'ENUM role_permissions
+        // Ces rôles ont des permissions codées en dur ici en attendant la migration SQL
+        $hardcodedPermissions = [
+            'SECRETAIRE_LABO' => [
+                'dashboard'   => ['read'],
+                'patients'    => ['read'],
+                'laboratoire' => ['read', 'write'],
+            ],
+            'SECRETAIRE_SAU' => [
+                'dashboard' => ['read'],
+                'urgences'  => ['read', 'write'],
+                'patients'  => ['read'],
+            ],
+            'SECRETAIRE_SPECIALISTE' => [
+                'dashboard'   => ['read'],
+                'specialiste' => ['read', 'write'],
+                'patients'    => ['read'],
+            ],
+        ];
+
+        if (isset($hardcodedPermissions[$role])) {
+            $allowed = $hardcodedPermissions[$role][$module] ?? [];
+            if (in_array($permission, $allowed) || in_array('write', $allowed)) {
+                return true;
+            }
+            // Si la permission demandée est 'read' et que 'write' est accordé → OK
+            if ($permission === 'read' && in_array('write', $allowed)) {
+                return true;
+            }
+            // Module non listé dans les droits de ce rôle → refus direct (évite la query ENUM)
+            return false;
         }
 
         // 2. LOGIQUE HIÉRARCHIQUE DES PERMISSIONS :
@@ -142,13 +189,15 @@ class Auth {
     public function requirePermission($module, $permission = 'read') {
         if (!$this->hasPermission($module, $permission)) {
             http_response_code(403);
-            require_once __DIR__ . '/../views/errors/403.php'; // Charge une vue 403 propre si elle existe
-            // Si pas de vue, on affiche un message propre :
-            die("<div style='text-align:center; padding:50px; font-family:sans-serif;'>
-                    <h1 style='font-size:4rem; color:#dc3545;'>403 - Accès Refusé</h1>
-                    <p style='font-size:1.2rem; color:#6c757d;'>Vous n'avez pas les droits nécessaires pour accéder au module : <b>" . htmlspecialchars($module) . "</b></p>
-                    <a href='".BASE_URL."' style='color:#0d6efd; text-decoration:none; font-weight:bold;'>Retour au tableau de bord</a>
-                 </div>");
+            $error_cause = "Votre profil ne dispose pas de la permission « " . $permission
+                . " » sur le module « " . $module . " ». "
+                . "Cette autorisation est gérée par l'administrateur dans Permissions & Accès.";
+            $error_details = [
+                'Module'             => $module,
+                'Permission requise' => strtoupper($permission),
+            ];
+            require __DIR__ . '/../views/errors/403.php';
+            exit;
         }
     }
 
@@ -167,6 +216,14 @@ class Auth {
         return $this->getUserRole() === 'INFIRMIER';
     }
 
+    public function isMajor() {
+        return $this->getUserRole() === 'MAJOR';
+    }
+
+    public function isClinician() {
+        return in_array($this->getUserRole(), ['MEDECIN', 'INFIRMIER', 'MAJOR', 'INFIRMIER_CONSULTANT']);
+    }
+
     public function isSecretaire() {
         $role = $this->getUserRole();
         return ($role === 'SECRETAIRE' || $role === 'ACCUEIL');
@@ -174,6 +231,10 @@ class Auth {
 
     public function isLaborantin() {
         return $this->getUserRole() === 'LABORANTIN';
+    }
+
+    public function isTechnicienLabo() {
+        return in_array($this->getUserRole(), ['TECHNICIEN_LABO', 'LABORANTIN', 'ADMIN', 'ADMINISTRATEUR']);
     }
 
     public function isPharmacien() {

@@ -30,8 +30,8 @@ $userRole = $_SESSION['user_role'] ?? '';
 $nomService = strtolower($_SESSION['nom_service'] ?? '');
 $isUrgence = (strpos($nomService, 'urgences') !== false);
 
-// Si c'est un infirmier ou le service des urgences, on ne rend rien
-if ($userRole === 'INFIRMIER' || $isUrgence) {
+// Si c'est un infirmier, une secrétaire SAU ou le service des urgences, on ne rend rien
+if ($userRole === 'INFIRMIER' || $userRole === 'SECRETAIRE_SAU' || $isUrgence) {
     return;
 }?>
 
@@ -54,9 +54,8 @@ if ($userRole === 'INFIRMIER' || $isUrgence) {
         background: rgba(0,0,0,0.2);
         border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-    .app-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-    .app-logo i { font-size: 1.5rem; color: #3b82f6; }
-    .app-logo h4 { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; }
+    .app-logo { display: flex; align-items: center; margin-bottom: 15px; }
+    .app-logo img { width: 180px; height: auto; }
 
     .user-profile-card {
         display: flex; align-items: center; gap: 12px;
@@ -118,11 +117,34 @@ if ($userRole === 'INFIRMIER' || $isUrgence) {
     .mt-auto { margin-top: auto; }
 </style>
 
-<div class="sidebar">
+<!-- ══ BARRE MOBILE (hamburger) — visible < 992px ══ -->
+<div class="mobile-topbar">
+    <button class="mob-btn" onclick="sidebarToggle()" title="Menu" aria-label="Ouvrir le menu">
+        <i class="bi bi-list fs-5"></i>
+    </button>
+    <span class="mob-brand">
+        <img src="<?= BASE_URL ?>public/images/simcare_plus_logo.svg" alt="SimCare+" style="height:22px;vertical-align:middle;margin-right:6px;">
+        <?= htmlspecialchars($_SESSION['nom_service'] ?? 'SimCare+') ?>
+    </span>
+    <div class="d-flex gap-2">
+        <?php if (!empty($_SESSION['logged_in'])): ?>
+        <button class="mob-btn" onclick="ouvrirProfilModal()" title="Mon profil">
+            <i class="bi bi-person-circle"></i>
+        </button>
+        <?php endif; ?>
+        <a href="<?= BASE_URL ?>logout" class="mob-btn danger" title="Déconnexion">
+            <i class="bi bi-power"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Backdrop -->
+<div id="sidebarBackdrop" class="sidebar-backdrop" onclick="sidebarToggle()"></div>
+
+<div class="sidebar" id="appSidebar">
     <div class="sidebar-header-modern">
         <div class="app-logo">
-            <i class="bi bi-hospital"></i>
-            <h4>Hôpital DME</h4>
+            <img src="<?= BASE_URL ?>public/images/simcare_plus_logo.svg" alt="SimCare+">
         </div>
         <div class="user-profile-card border border-secondary border-opacity-25">
             <div class="user-avatar"><?= strtoupper(substr($userName, 0, 2)) ?></div>
@@ -157,18 +179,29 @@ if ($userRole === 'INFIRMIER' || $isUrgence) {
         <div class="nav-section">
             <div class="nav-title">Mon Service</div>
 
-            <?php if ($userRole === 'ADMIN' || $userRole === 'LABORANTIN'): ?>
+            <?php if ($userRole === 'ADMIN' || $userRole === 'LABORANTIN' || $userRole === 'TECHNICIEN_LABO'): ?>
                 <a href="<?= BASE_URL ?>laboratoire" class="nav-link-custom <?= isActive('laboratoire') ?>">
                     <i class="bi bi-flask-fill text-warning me-2"></i> Laboratoire
+                </a>
+                <?php if ($userRole === 'ADMIN' || $userRole === 'LABORANTIN'): ?>
+                <a href="<?= BASE_URL ?>laboratoire/historique" class="nav-link-custom <?= isActive('laboratoire/historique') ?>">
+                    <i class="bi bi-clock-history text-secondary me-2"></i> Historique Labo
                 </a>
                 <a href="<?= BASE_URL ?>banque-sang" class="nav-link-custom <?= isActive('banque-sang') ?>">
                     <i class="bi bi-droplet-fill text-danger me-2"></i> Banque de Sang
                 </a>
+                <?php endif; ?>
             <?php endif; ?>
 
             <?php if ($userRole === 'ADMIN' || $userRole === 'PHARMACIEN'): ?>
                 <a href="<?= BASE_URL ?>pharmacie" class="nav-link-custom <?= isActive('pharmacie') ?>">
                     <i class="bi bi-capsule text-pink me-2"></i> Pharmacie
+                </a>
+            <?php endif; ?>
+
+            <?php if (in_array($userRole, ['ADMIN','RADIOLOGUE'])): ?>
+                <a href="<?= BASE_URL ?>imagerie" class="nav-link-custom <?= isActive('imagerie') ?>">
+                    <i class="bi bi-radioactive me-2" style="color:#6366f1;"></i> Imagerie / Radiologie
                 </a>
             <?php endif; ?>
 
@@ -180,6 +213,12 @@ if ($userRole === 'INFIRMIER' || $isUrgence) {
                     <i class="bi bi-scissors text-magenta me-2"></i> Bloc Opératoire
                 </a>
             <?php endif; ?>
+
+            <?php if (in_array($userRole, ['COORDONNATEUR_SOINS','ADMIN','ADMINISTRATEUR','DIRECTEUR','MEDECIN_CHEF'])): ?>
+                <a href="<?= BASE_URL ?>coordo-soins/dashboard" class="nav-link-custom <?= isActive('coordo-soins') ?>">
+                    <i class="bi bi-clipboard2-pulse-fill me-2" style="color:#2dd4bf;"></i> Coordination des Soins
+                </a>
+            <?php endif; ?>
         </div>
 
         <div class="nav-section">
@@ -189,6 +228,23 @@ if ($userRole === 'INFIRMIER' || $isUrgence) {
         Gestion des Lits
     </a>
 </div>
+
+        <!-- SECTION SPÉCIALISTES -->
+        <?php if (in_array($userRole, ['SECRETAIRE_SPECIALISTE','COORDONNATEUR_SOINS','ACCUEIL','ADMIN','ADMINISTRATEUR','DIRECTEUR','MAJOR'])): ?>
+        <div class="nav-section">
+            <div class="nav-title">Spécialistes</div>
+            <?php if (in_array($userRole, ['SECRETAIRE_SPECIALISTE','COORDONNATEUR_SOINS','ADMIN','ADMINISTRATEUR','DIRECTEUR'])): ?>
+            <a href="<?= BASE_URL ?>specialiste/secretariat" class="nav-link-custom <?= isActive('specialiste/secretariat') ?>">
+                <i class="bi bi-person-badge-fill me-2" style="color:#a78bfa;"></i> Agenda Spécialistes
+            </a>
+            <?php endif; ?>
+            <?php if (in_array($userRole, ['ACCUEIL','COORDONNATEUR_SOINS','ADMIN','ADMINISTRATEUR','DIRECTEUR','MAJOR'])): ?>
+            <a href="<?= BASE_URL ?>specialiste/accueil" class="nav-link-custom <?= isActive('specialiste/accueil') ?>">
+                <i class="bi bi-calendar2-check me-2" style="color:#a78bfa;"></i> RDV Spécialistes
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- SECTION COMMUNICATION -->
         <div class="nav-section">
@@ -219,8 +275,41 @@ if ($userRole === 'INFIRMIER' || $isUrgence) {
     </div>
 
     <div class="nav-section mt-auto border-top border-secondary border-opacity-10">
+        <button onclick="ouvrirProfilModal()"
+                class="nav-link-custom w-100 text-start border-0 bg-transparent"
+                style="color:#94a3b8;">
+            <i class="bi bi-person-circle me-2" style="color:#60a5fa;width:25px;font-size:1.1rem;"></i>
+            Mon Profil
+        </button>
         <a href="<?= BASE_URL ?>logout" class="nav-link-custom text-danger">
             <i class="bi bi-box-arrow-left"></i> <span>Déconnexion</span>
         </a>
     </div>
 </div>
+
+<script>
+function sidebarToggle() {
+    const sidebar  = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.contains('sidebar-open');
+    sidebar.classList.toggle('sidebar-open', !isOpen);
+    backdrop.classList.toggle('active', !isOpen);
+    document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+// Fermer la sidebar si on clique sur un lien (navigation)
+document.querySelectorAll('#appSidebar .nav-link-custom').forEach(function(link) {
+    link.addEventListener('click', function() {
+        if (window.innerWidth < 992) sidebarToggle();
+    });
+});
+
+// Fermer sur ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const sidebar = document.getElementById('appSidebar');
+        if (sidebar && sidebar.classList.contains('sidebar-open')) sidebarToggle();
+    }
+});
+</script>

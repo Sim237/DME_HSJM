@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 // Initialisation des variables
 $patient = $patient ?? [];
 $consultation = $consultation_data ?? [];
@@ -33,13 +45,12 @@ include __DIR__ . '/../../layouts/header.php';
                         <!-- Plan de surveillance -->
                         <div class="mb-4">
                             <label for="surveillance" class="form-label fw-bold">
-                                <i class="fas fa-eye text-info"></i> Plan de Surveillance <span class="text-danger">*</span>
+                                <i class="fas fa-eye text-info"></i> Plan de Surveillance
                             </label>
                             <textarea class="form-control"
                                       id="surveillance"
                                       name="surveillance"
                                       rows="6"
-                                      required
                                       placeholder="Décrivez les éléments à surveiller :
 - Signes cliniques à surveiller
 - Paramètres à contrôler (température, TA...)

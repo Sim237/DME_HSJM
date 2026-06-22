@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 require_once __DIR__ . '/../layouts/header.php';
 $patient = $patient ?? null;
 ?>
@@ -52,7 +64,7 @@ $patient = $patient ?? null;
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-6">
                     <div class="card h-100 shadow-sm consultation-type-card" onclick="demarrerConsultation('INTERNE')">
                         <div class="card-body text-center p-5">
@@ -69,6 +81,33 @@ $patient = $patient ?? null;
                         </div>
                     </div>
                 </div>
+
+                <?php
+                // Bouton pédiatrie : visible uniquement pour le service Pédiatrie/Néonatologie (et ADMIN)
+                $nomSvc = strtolower($_SESSION['nom_service'] ?? '');
+                $isPed = stripos($nomSvc, 'pédiatrie') !== false || stripos($nomSvc, 'pediatrie') !== false
+                      || stripos($nomSvc, 'néonatologie') !== false || stripos($nomSvc, 'neonatologie') !== false;
+                if ($isPed || ($_SESSION['role'] ?? '') === 'ADMIN'):
+                ?>
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm consultation-type-card border-2 border-primary"
+                         onclick="demarrerConsultationPed()">
+                        <div class="card-body text-center p-5">
+                            <div class="mb-4">
+                                <i class="bi bi-heart-pulse-fill display-1 text-primary"></i>
+                            </div>
+                            <h3 class="card-title mb-3">Consultation Pédiatrique</h3>
+                            <p class="card-text text-muted">
+                                Formulaire d'observation médicale spécialisé pour les nourrissons et enfants.
+                                <span class="badge bg-primary mt-1">Pédiatrie &amp; Néonatologie</span>
+                            </p>
+                            <button class="btn btn-primary btn-lg mt-3">
+                                <i class="bi bi-clipboard-plus"></i> Formulaire Pédiatrique
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
             <?php else: ?>
             <div class="alert alert-warning">
@@ -97,7 +136,13 @@ $patient = $patient ?? null;
 function demarrerConsultation(type) {
     const patientId = <?= $patient['id'] ?? 'null' ?>;
     if (patientId) {
-        window.location.href = `index.php?page=consultation&action=formulaire&patient_id=${patientId}&type=${type}&etape=1`;
+        window.location.href = `<?= BASE_URL ?>consultation/commencer?patient_id=${patientId}&type=${type}`;
+    }
+}
+function demarrerConsultationPed() {
+    const patientId = <?= $patient['id'] ?? 'null' ?>;
+    if (patientId) {
+        window.location.href = `<?= BASE_URL ?>consultation-ped/formulaire/${patientId}?step=1`;
     }
 }
 </script>

@@ -1,3 +1,16 @@
+# 0. Limites PHP pour l'upload de fichiers DICOM (prioritaire sur php.ini)
+<IfModule php_module>
+    php_value upload_max_filesize 200M
+    php_value post_max_size 210M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 512M
+    # Écrire les erreurs dans un fichier log plutôt que dans la réponse HTTP
+    php_flag  display_errors Off
+    php_flag  log_errors On
+    php_value error_log "/var/log/apache2/php_error_dme.log"
+</IfModule>
+
 # 1. Empêcher l'affichage des dossiers (Sécurité)
 Options -Indexes
 Options -MultiViews
@@ -27,3 +40,10 @@ RewriteRule ^(.*)$ index.php [QSA,L]
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# 9. CORS pour les polices (résout les erreurs mixed-content/CORS sur woff/woff2/ttf)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(woff|woff2|ttf|otf|eot|svg)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>

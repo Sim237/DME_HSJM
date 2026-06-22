@@ -14,14 +14,14 @@
         .stamp-area { margin-top: 50px; display: flex; justify-content: space-between; }
         .signature-box { text-align: center; width: 250px; }
         .footer-note { font-size: 0.8rem; text-align: center; margin-top: 50px; opacity: 0.7; }
-        @media print { .no-print { display: none; } }
+        @page { size: A4; margin: 1.2cm; }
+        @media print { .no-print { display: none; } html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>
 </head>
 <body onload="window.print()">
     <div class="billet-box">
         <div class="header">
-            <div class="hospital-name">Ordre de Malte - Hôpital St-Jean de Malte</div>
-            <div class="small">B.P. 56 Njombé, Cameroun</div>
+            <?php require_once __DIR__ . '/../partials/entete_hopital.php'; echo entete_hopital(['compact' => true]); ?>
             <div class="doc-title">BILLET DE SORTIE</div>
         </div>
 
@@ -59,7 +59,7 @@
         </div>
 
         <div class="footer-note">
-            Document généré électroniquement par le DME Hospital. Valable uniquement avec le cachet sec de l'établissement.
+            Document généré électroniquement par le SimCare+. Valable uniquement avec le cachet sec de l'établissement.
         </div>
     </div>
 

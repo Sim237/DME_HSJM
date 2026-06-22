@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 require_once __DIR__ . '/../layouts/header.php';
 $examen = $examen ?? [];
 $details = $examen['details'] ?? [];
@@ -8,9 +20,7 @@ $sexe_patient = $examen['sexe'] ?? 'M';
 
 <div class="container-fluid">
     <div class="row">
-        <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
-        
-        <main class="col-md-10 ms-sm-auto px-md-4 py-4">
+        <main class="col-12 px-md-5 py-4">
             
             <!-- EN-TÊTE FLUIDE -->
             <div class="d-flex justify-content-between align-items-center mb-4">

@@ -216,7 +216,7 @@ function scheduleReminders() {
 function testSMS() {
     const phone = prompt('Numéro de téléphone:');
     if (phone) {
-        fetch(`<?php echo BASE_URL; ?>notifications/test-sms?phone=${phone}&message=Test SMS DME Hospital`)
+        fetch(`<?php echo BASE_URL; ?>notifications/test-sms?phone=${phone}&message=Test SMS SimCare+`)
         .then(response => response.json())
         .then(data => {
             showResult('SMS de test envoyé (simulé)', 'success');
@@ -227,7 +227,7 @@ function testSMS() {
 function testEmail() {
     const email = prompt('Adresse email:');
     if (email) {
-        fetch(`<?php echo BASE_URL; ?>notifications/test-email?email=${email}&subject=Test&message=Test email DME Hospital`)
+        fetch(`<?php echo BASE_URL; ?>notifications/test-email?email=${email}&subject=Test&message=Test email SimCare+`)
         .then(response => response.json())
         .then(data => {
             showResult('Email de test envoyé', data.success ? 'success' : 'error');

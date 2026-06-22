@@ -1,5 +1,17 @@
 <div class="app-wrapper">
-    <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
+    <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ require_once __DIR__ . '/../layouts/sidebar.php'; ?>
     <main class="main-content w-100 p-4">
         <h2 class="fw-bold mb-4">Mon Activité Médicale</h2>
 

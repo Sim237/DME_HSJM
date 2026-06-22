@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 
 class NotificationResultatService {
     private $db;
@@ -27,7 +39,7 @@ class NotificationResultatService {
             $stmt = $this->db->prepare("
                 SELECT COUNT(*) as nb_termines
                 FROM demande_examens 
-                WHERE demande_id = ? AND statut = 'TERMINE'
+                WHERE demande_id = ? AND statut IN ('SOUMIS', 'VALIDE')
             ");
             $stmt->execute([$demande_id]);
             $nb_termines = $stmt->fetch()['nb_termines'];
@@ -76,7 +88,7 @@ class NotificationResultatService {
             JOIN examens_laboratoire el ON de.examen_id = el.id
             JOIN demandes_laboratoire d ON de.demande_id = d.id
             JOIN consultations c ON d.consultation_id = c.id
-            WHERE de.demande_id = ? AND de.statut = 'TERMINE' AND de.resultat IS NOT NULL
+            WHERE de.demande_id = ? AND de.statut IN ('SOUMIS', 'VALIDE') AND de.resultat IS NOT NULL
         ");
         $stmt->execute([$demande_id]);
         $examens = $stmt->fetchAll(PDO::FETCH_ASSOC);

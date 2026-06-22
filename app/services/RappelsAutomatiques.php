@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 
 class RappelsAutomatiques {
     
@@ -7,7 +19,7 @@ class RappelsAutomatiques {
         
         // Récupérer traitements dus dans les 30 prochaines minutes
         $stmt = $db->prepare("
-            SELECT ph.*, p.nom, p.prenom, m.nom as medicament, s.nom as service
+            SELECT ph.*, p.nom, p.prenom, m.nom as medicament, s.nom_service as service
             FROM prescriptions_hospitalisation ph
             JOIN patients p ON ph.patient_id = p.id
             JOIN medicaments m ON ph.medicament_id = m.id
@@ -39,7 +51,7 @@ class RappelsAutomatiques {
         
         // Patients sans constantes depuis plus de 4h
         $stmt = $db->prepare("
-            SELECT p.*, h.service_id, s.nom as service
+            SELECT p.*, h.service_id, s.nom_service as service
             FROM patients p
             JOIN hospitalisations h ON p.id = h.patient_id
             JOIN services s ON h.service_id = s.id

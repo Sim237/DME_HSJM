@@ -1,0 +1,404 @@
+/*
+ * ═══════════════════════════════════════════════════════════════════
+ *  IMPRESSION MATRICIELLE — Epson LQ / LX 350
+ *  Compatible : papier continu 9½" × 11" (241 × 279 mm)
+ *               feuille coupée A5 (148 × 210 mm)
+ *               demi-A4 portrait
+ *
+ *  Usage  :  ajouter ?mode=matricielle[&format=A5|continu|demiA4]
+ *            dans l'URL de la page d'impression, OU
+ *            cliquer le bouton "Mode Matricielle" sur la page.
+ *
+ *  Règles générales pour l'imprimante à aiguilles :
+ *    • Pas d'ombres (box-shadow / text-shadow)
+ *    • Pas de dégradés (background: linear-gradient)
+ *    • Pas de couleurs de fond (tout en blanc)
+ *    • Police : Arial / Helvetica (anticrénelage absent sur dot-matrix)
+ *    • Taille police : 8–9 pt pour le corps, 10–11 pt pour les titres
+ *    • Bordures : solid 0.5pt black uniquement
+ *    • Pas d'images complexes (logos en texte pur si possible)
+ * ═══════════════════════════════════════════════════════════════════
+ */
+
+/* ── Variables de format (modifiées par JS selon le choix) ── */
+:root {
+    --mat-page-w:   210mm;   /* A4 portrait par défaut */
+    --mat-page-h:   297mm;
+    --mat-margin-t:   8mm;
+    --mat-margin-r:  10mm;
+    --mat-margin-b:   8mm;
+    --mat-margin-l:  10mm;
+    --mat-font:       'Arial', Helvetica, sans-serif;
+    --mat-font-sz:    8.5pt;
+    --mat-line-h:     1.35;
+}
+
+/* Format A4 portrait (210 × 297 mm) — défaut */
+:root.fmt-A4, .fmt-A4 {
+    --mat-page-w: 210mm; --mat-page-h: 297mm;
+    --mat-margin-t: 8mm; --mat-margin-r: 10mm;
+    --mat-margin-b: 8mm; --mat-margin-l: 10mm;
+}
+/* Format A5 portrait (148 × 210 mm) */
+:root.fmt-A5, .fmt-A5 {
+    --mat-page-w: 148mm; --mat-page-h: 210mm;
+    --mat-margin-t: 6mm; --mat-margin-r: 8mm;
+    --mat-margin-b: 6mm; --mat-margin-l: 8mm;
+}
+/* Format continu 9½" × 11" (241.3 × 279.4 mm) */
+:root.fmt-continu, .fmt-continu {
+    --mat-page-w: 241mm; --mat-page-h: 279mm;
+    --mat-margin-r: 15mm; --mat-margin-l: 15mm;
+}
+/* Format demi-A4 (210 × 148 mm landscape) */
+:root.fmt-demiA4, .fmt-demiA4 {
+    --mat-page-w: 210mm; --mat-page-h: 148mm;
+    --mat-margin-t: 5mm; --mat-margin-b: 5mm;
+}
+
+/* ══════════════════════════════════════════
+   @page — déclaration papier pour le pilote
+   NOTE : var() non supporté dans @page size.
+   Le JavaScript injecte dynamiquement une
+   balise <style id="matPageRule"> avec les
+   dimensions exactes selon le format choisi.
+   Le CSS ci-dessous est le fallback A5.
+   ══════════════════════════════════════════ */
+@page { size: 210mm 297mm; margin: 8mm 10mm; }          /* A4 — défaut */
+@page.fmt-A5      { size: 148mm 210mm; margin: 6mm 8mm;  } /* non standard, JS prend le relais */
+@page.fmt-continu { size: 241mm 279mm; margin: 8mm 15mm; }
+@page.fmt-demiA4  { size: 210mm 148mm; margin: 5mm 8mm;  }
+
+/* ── Reset global en mode matricielle ── */
+body.mode-matricielle,
+body.mode-matricielle * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+body.mode-matricielle {
+    font-family: var(--mat-font) !important;
+    font-size: var(--mat-font-sz) !important;
+    line-height: var(--mat-line-h) !important;
+    background: #f0f0f0 !important; /* fond écran seulement */
+}
+
+/* ── Feuille papier (écran) ── */
+body.mode-matricielle .page-mat {
+    background: white !important;
+    width: var(--mat-page-w);
+    min-height: var(--mat-page-h);
+    margin: 10px auto;
+    padding: var(--mat-margin-t) var(--mat-margin-r)
+             var(--mat-margin-b) var(--mat-margin-l);
+    border: 1px solid #999;
+    font-family: var(--mat-font) !important;
+    font-size: var(--mat-font-sz) !important;
+}
+
+/* ── En-tête hôpital ── */
+body.mode-matricielle .mat-header {
+    border-bottom: 1pt solid black;
+    padding-bottom: 3mm;
+    margin-bottom: 3mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4mm;
+}
+body.mode-matricielle .mat-header-left {
+    flex: 1;
+}
+body.mode-matricielle .mat-hopital-nom {
+    font-size: 10pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+body.mode-matricielle .mat-hopital-info {
+    font-size: 7pt;
+    line-height: 1.3;
+}
+body.mode-matricielle .mat-header-right {
+    text-align: right;
+    font-size: 7.5pt;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+/* ── Titre du document ── */
+body.mode-matricielle .mat-titre {
+    text-align: center;
+    font-size: 11pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-top: 0.5pt solid black;
+    border-bottom: 0.5pt solid black;
+    padding: 1.5mm 0;
+    margin: 2mm 0;
+    letter-spacing: 1px;
+}
+body.mode-matricielle .mat-sous-titre {
+    text-align: center;
+    font-size: 7pt;
+    margin-bottom: 2mm;
+    font-style: italic;
+}
+
+/* ── Numéro de document ── */
+body.mode-matricielle .mat-num {
+    font-size: 7pt;
+    text-align: right;
+    margin-bottom: 2mm;
+}
+
+/* ── Infos patient ── */
+body.mode-matricielle .mat-patient-box {
+    border: 0.75pt solid black;
+    padding: 2mm 3mm;
+    margin-bottom: 3mm;
+    font-size: 8pt;
+}
+body.mode-matricielle .mat-patient-box .mat-row {
+    display: flex;
+    gap: 6mm;
+    line-height: 1.5;
+}
+body.mode-matricielle .mat-patient-box .mat-field {
+    flex: 1;
+}
+body.mode-matricielle .mat-patient-box .mat-label {
+    font-weight: bold;
+    font-size: 7pt;
+    text-transform: uppercase;
+}
+body.mode-matricielle .mat-patient-box .mat-val {
+    border-bottom: 0.5pt solid black;
+    display: inline-block;
+    min-width: 30mm;
+}
+
+/* ── Corps ordonnance / Rx ── */
+body.mode-matricielle .mat-rx-symbol {
+    font-size: 14pt;
+    font-weight: bold;
+    font-style: italic;
+    border-bottom: 0.5pt solid black;
+    padding-bottom: 1mm;
+    margin-bottom: 2mm;
+}
+body.mode-matricielle .mat-med-list {
+    padding-left: 3mm;
+}
+body.mode-matricielle .mat-med-item {
+    margin-bottom: 3mm;
+    padding-bottom: 2mm;
+    border-bottom: 0.5pt dashed #555;
+}
+body.mode-matricielle .mat-med-num {
+    font-weight: bold;
+    margin-right: 2mm;
+}
+body.mode-matricielle .mat-med-nom {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 9pt;
+}
+body.mode-matricielle .mat-med-forme {
+    font-size: 7.5pt;
+}
+body.mode-matricielle .mat-med-posologie {
+    padding-left: 5mm;
+    font-size: 8pt;
+    font-style: italic;
+    line-height: 1.4;
+}
+body.mode-matricielle .mat-med-qte {
+    float: right;
+    font-weight: bold;
+    font-size: 8pt;
+}
+
+/* ── Tableau d'examens labo ── */
+body.mode-matricielle .mat-examens-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2mm;
+    font-size: 8pt;
+}
+body.mode-matricielle .mat-examens-table th {
+    border: 0.5pt solid black;
+    padding: 1mm 2mm;
+    font-weight: bold;
+    font-size: 7.5pt;
+    text-align: left;
+    background: white !important;
+    text-transform: uppercase;
+}
+body.mode-matricielle .mat-examens-table td {
+    border: 0.5pt solid black;
+    padding: 1.5mm 2mm;
+    vertical-align: top;
+}
+body.mode-matricielle .mat-examens-table .mat-urgent {
+    font-weight: bold;
+    text-transform: uppercase;
+}
+body.mode-matricielle .mat-section-titre {
+    font-size: 8.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-bottom: 0.5pt solid black;
+    padding-bottom: 1mm;
+    margin: 3mm 0 1.5mm;
+}
+
+/* ── Cases à cocher dép. (bulletin labo) ── */
+body.mode-matricielle .mat-dept-boxes {
+    border: 0.5pt solid black;
+    padding: 1.5mm 3mm;
+    font-size: 7.5pt;
+    display: inline-block;
+}
+body.mode-matricielle .mat-dept-boxes .mat-chk {
+    display: inline-flex;
+    align-items: center;
+    gap: 2mm;
+    margin-right: 4mm;
+    line-height: 1.6;
+}
+body.mode-matricielle .mat-chk-box {
+    display: inline-block;
+    width: 3mm; height: 3mm;
+    border: 0.75pt solid black;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+body.mode-matricielle .mat-chk-box.checked::after {
+    content: '✓';
+    font-size: 7pt;
+    line-height: 1;
+    display: block;
+    text-align: center;
+}
+
+/* ── Zone renseignements cliniques ── */
+body.mode-matricielle .mat-clinical {
+    border: 0.5pt solid black;
+    padding: 2mm;
+    min-height: 12mm;
+    font-size: 8pt;
+    margin-top: 2mm;
+    font-style: italic;
+    color: #333 !important;
+}
+
+/* ── Zone résultats ── */
+body.mode-matricielle .mat-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.5pt;
+    margin-top: 1mm;
+}
+body.mode-matricielle .mat-results-table th {
+    border: 0.5pt solid black;
+    padding: 1mm 2mm;
+    font-size: 7pt;
+    text-align: center;
+    font-weight: bold;
+}
+body.mode-matricielle .mat-results-table td {
+    border: 0.5pt solid black;
+    padding: 1mm 2mm;
+}
+body.mode-matricielle .mat-results-table .anormal {
+    font-weight: bold;
+}
+
+/* ── Signature ── */
+body.mode-matricielle .mat-signature-block {
+    margin-top: 4mm;
+    padding-top: 3mm;
+    border-top: 0.5pt solid black;
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+}
+body.mode-matricielle .mat-sig-zone {
+    text-align: center;
+    min-width: 35mm;
+}
+body.mode-matricielle .mat-sig-zone .mat-sig-line {
+    border-top: 0.5pt solid black;
+    margin-top: 12mm;
+    padding-top: 1mm;
+    font-size: 7pt;
+}
+body.mode-matricielle .mat-sig-zone img {
+    max-height: 12mm;
+    max-width: 28mm;
+    display: block;
+    margin: 0 auto 1mm;
+}
+
+/* ── Pied de page ── */
+body.mode-matricielle .mat-footer {
+    border-top: 0.5pt solid black;
+    padding-top: 2mm;
+    margin-top: 4mm;
+    font-size: 6.5pt;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* ── Bandes perforées (écran uniquement, format continu) ── */
+body.mode-matricielle.fmt-continu .page-mat::before,
+body.mode-matricielle.fmt-continu .page-mat::after {
+    content: '';
+    display: block;
+    height: 8mm;
+    background: repeating-linear-gradient(
+        90deg, #e8e8e8 0, #e8e8e8 4mm, white 4mm, white 8mm
+    );
+    margin: 0 -8mm;
+    border: 1px solid #ccc;
+    print-color-adjust: economy;
+}
+
+/* ══════════════════════════════════
+   IMPRESSION (@media print)
+   ══════════════════════════════════ */
+@media print {
+    /* Cacher les barres d'outils et boutons */
+    body.mode-matricielle .no-print,
+    body.mode-matricielle .action-bar,
+    body.mode-matricielle .mat-toolbar,
+    body.mode-matricielle .btn-print-bar { display: none !important; }
+
+    /* Supprimer les marges de body — @page gère tout */
+    body.mode-matricielle {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* La feuille papier occupe toute la page */
+    body.mode-matricielle .page-mat {
+        width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;  /* @page margin prend le relais */
+        border: none !important;
+    }
+
+    /* Éviter les coupures à l'intérieur d'un médicament ou d'une ligne */
+    body.mode-matricielle .mat-med-item,
+    body.mode-matricielle .mat-examens-table tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+}

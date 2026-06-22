@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 /* ============================================================================
    FICHIER : Lit.php
    Modèle pour la gestion des lits et de l'occupation
@@ -16,7 +28,7 @@ class Lit {
     
     // Récupérer tous les lits avec le statut réel et les infos patient si occupé
     public function getAll() {
-        $sql = "SELECT l.*, s.nom as service,
+        $sql = "SELECT l.*, s.nom_service as service,
                 CASE 
                     WHEN a.id IS NOT NULL AND a.statut = 'EN_COURS' THEN 'OCCUPE'
                     ELSE l.statut
@@ -50,7 +62,7 @@ class Lit {
 
     // Récupérer les détails d'un lit occupé (utilisé pour transfert/décharge)
     public function getDetailsLitOccupe($lit_id) {
-        $sql = "SELECT l.*, s.nom as service, 
+        $sql = "SELECT l.*, s.nom_service as service, 
                 a.id as admission_id, a.date_admission, a.patient_id
                 FROM lits l
                 JOIN services s ON l.service_id = s.id

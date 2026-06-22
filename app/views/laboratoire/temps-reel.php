@@ -1,10 +1,20 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+<?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+ require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="container-fluid">
     <div class="row">
-        <?php require_once __DIR__ . '/../layouts/sidebar.php'; ?>
-        
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <main class="col-12 px-md-5">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2"><i class="bi bi-activity me-2"></i>Laboratoire - Temps Réel</h1>
                 <div class="btn-toolbar">

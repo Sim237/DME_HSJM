@@ -1,0 +1,48 @@
+<svg width="100%" viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  
+<mask id="imagine-text-gaps-wfmcwn" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="680" height="340" fill="white"/><rect x="217.33999633789062" y="94.0888900756836" width="98.66667175292969" height="72.75555419921875" fill="black" rx="2"/><rect x="379" y="94.0888900756836" width="116.80830383300781" height="72.75555419921875" fill="black" rx="2"/><rect x="530" y="102.19999694824219" width="35.16458320617676" height="54.622222900390625" fill="black" rx="2"/><rect x="217.33999633789062" y="174.13333129882812" width="466.65765380859375" height="23.644445419311523" fill="black" rx="2"/><rect x="288.4472351074219" y="210.91110229492188" width="34.35000038146973" height="19.111111640930176" fill="black" rx="2"/><rect x="192.15516662597656" y="305.9111022949219" width="295.6895751953125" height="19.111111640930176" fill="black" rx="2"/></mask></defs>
+
+<!-- Fond icon: cercle principal -->
+<circle cx="152" cy="170" r="100" fill="#0f172a" style="fill:rgb(15, 23, 42);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Anneau extérieur accent teal -->
+<circle cx="152" cy="170" r="100" fill="none" stroke="#0ea5e9" stroke-width="3" style="fill:none;stroke:rgb(14, 165, 233);color:rgb(255, 255, 255);stroke-width:3px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Croix médicale intégrée dans le C -->
+
+<!-- Lettre S — courbe supérieure -->
+<path d="M128 130 Q108 130 108 148 Q108 163 128 166 Q150 169 150 184 Q150 202 128 202 Q112 202 105 194" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" style="fill:none;stroke:rgb(255, 255, 255);color:rgb(255, 255, 255);stroke-width:8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Lettre C -->
+<path d="M192 148 Q180 128 162 128 Q140 128 140 170 Q140 212 162 212 Q180 212 192 194" fill="none" stroke="#0ea5e9" stroke-width="8" stroke-linecap="round" style="fill:none;stroke:rgb(14, 165, 233);color:rgb(255, 255, 255);stroke-width:8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Petite croix médicale en haut à droite du C -->
+<rect x="188" y="122" width="24" height="7" rx="3.5" fill="#0ea5e9" style="fill:rgb(14, 165, 233);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<rect x="198" y="112" width="7" height="24" rx="3.5" fill="#0ea5e9" style="fill:rgb(14, 165, 233);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Ligne de pouls cardiaque traversant la base de l'icône -->
+<polyline points="65,185 90,185 100,162 112,200 122,175 132,185 240,185" fill="none" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.45" mask="url(#imagine-text-gaps-wfmcwn)" style="fill:none;stroke:rgb(14, 165, 233);color:rgb(255, 255, 255);stroke-width:2.5px;stroke-linecap:round;stroke-linejoin:round;opacity:0.45;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- ── Nom de l'application ── -->
+<!-- "Sim" en blanc -->
+<text x="221.34" y="152" fill="#ffffff" style="fill:rgb(255, 255, 255);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, system-ui, sans-serif;font-size:52px;font-weight:800;text-anchor:start;dominant-baseline:auto">Sim</text>
+<!-- "Care" en bleu ciel -->
+<text x="383" y="152" fill="#0ea5e9" style="fill:rgb(14, 165, 233);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, system-ui, sans-serif;font-size:52px;font-weight:800;text-anchor:start;dominant-baseline:auto">Care</text>
+<!-- "+" petit, teal -->
+<text x="534" y="145" font-family="Inter, system-ui, sans-serif" font-size="38" font-weight="800" fill="#38bdf8" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, system-ui, sans-serif;font-size:38px;font-weight:800;text-anchor:start;dominant-baseline:auto">+</text>
+
+<!-- Ligne séparatrice fine -->
+<line x1="278" y1="165" x2="564" y2="165" stroke="#1e3a5f" stroke-width="1.5" mask="url(#imagine-text-gaps-wfmcwn)" style="fill:rgb(0, 0, 0);stroke:rgb(30, 58, 95);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+<!-- Tagline -->
+<text x="221.34" y="192" fill="#94a3b8" style="fill:rgb(148, 163, 184);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, system-ui, sans-serif;font-size:15px;font-weight:300;text-anchor:start;dominant-baseline:auto">SYSTÈME INTÉGRÉ DE MANAGEMENT CLINIQUE</text>
+
+<!-- Version / badge -->
+<rect x="278" y="210" width="56" height="22" rx="11" fill="#0ea5e9" opacity="0.15" style="fill:rgb(14, 165, 233);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.15;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<text x="306" y="225" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#0ea5e9" text-anchor="middle" letter-spacing="1" style="fill:rgb(14, 165, 233);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, system-ui, sans-serif;font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:auto">v2.0</text>
+
+<!-- Variante fond clair — même logo sur rectangle blanc -->
+<rect x="60" y="280" width="560" height="2" rx="1" fill="#1e3a5f" opacity="0.12" style="fill:rgb(30, 58, 95);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.12;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<text x="340" y="320" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="middle" letter-spacing="2" style="fill:rgb(100, 116, 139);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Inter, system-ui, sans-serif;font-size:11px;font-weight:400;text-anchor:middle;dominant-baseline:auto">HÔPITAL SAINT-JEAN DE MALTE — NJOMBÉ</text>
+</svg>

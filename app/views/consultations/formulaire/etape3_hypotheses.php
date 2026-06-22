@@ -1,4 +1,16 @@
 <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
 // Initialisation des variables
 $patient = $patient ?? [];
 $consultation = $consultation_data ?? [];
@@ -9,7 +21,7 @@ include __DIR__ . '/../../layouts/header.php';
 
 <div class="container-fluid">
     <div class="row">
-        <?php include __DIR__ . '/../../layouts/sidebar.php'; ?>
+
 
        <main class="col-12 px-md-4 consultation-form" style="margin-left: 0 !important;">
 
@@ -31,41 +43,21 @@ include __DIR__ . '/../../layouts/header.php';
                         <h5 class="mb-0"><i class="fas fa-diagnoses me-2"></i> HYPOTHÈSES DIAGNOSTIQUES</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Hypothèses diagnostiques -->
+                        <!-- Champ caché pour maintenir la compatibilité BDD -->
+                        <input type="hidden" name="hypotheses_diagnostiques" value="<?php echo htmlspecialchars($consultation['hypotheses_diagnostiques'] ?? ''); ?>">
+
+                        <!-- Diagnostic Principal — champ de saisie libre -->
                         <div class="mb-4">
-                            <label for="hypotheses_diagnostiques" class="form-label fw-bold">
-                                <i class="fas fa-lightbulb text-warning"></i> Hypothèses Diagnostiques <span class="text-danger">*</span>
+                            <label for="diagnostic_principal" class="form-label fw-bold">
+                                <i class="fas fa-check-circle text-success"></i> Diagnostic Principal (CIM-10) * ou de Travail
                             </label>
-                            <textarea class="form-control"
-                                      id="hypotheses_diagnostiques"
-                                      name="hypotheses_diagnostiques"
-                                      rows="5"
-                                      required
-                                      placeholder="Listez les différentes hypothèses diagnostiques envisagées..."><?php echo htmlspecialchars($consultation['hypotheses_diagnostiques'] ?? ''); ?></textarea>
-                            <small class="form-text text-muted">
-                                Basé sur l'anamnèse et l'examen physique
-                            </small>
+                            <input type="text"
+                                   class="form-control"
+                                   id="diagnostic_principal"
+                                   name="diagnostic_principal"
+                                   value="<?php echo htmlspecialchars($consultation['diagnostic_principal'] ?? ''); ?>"
+                                   placeholder="Ex: B50 - Paludisme à Plasmodium falciparum, ou description libre...">
                         </div>
-
-                        <!-- Remplacer le bloc "Diagnostic Principal" par ceci -->
-<div class="mb-4">
-    <label class="form-label fw-bold">
-        <i class="fas fa-check-circle text-success"></i> Diagnostic Principal (CIM-10) *  ou de Travail
-    </label>
-    <div class="position-relative">
-        <input type="text" class="form-control" id="searchCim10"
-               placeholder="Tapez un code (ex: B50) ou un nom (ex: Palu...)" autocomplete="off">
-        <input type="hidden" name="diagnostic_principal" id="diagnostic_principal"
-               value="<?php echo htmlspecialchars($consultation['diagnostic_principal'] ?? ''); ?>">
-
-        <!-- Liste des résultats -->
-        <div id="cim10Results" class="list-group position-absolute w-100 shadow" style="z-index: 1000; display:none;"></div>
-    </div>
-    <!-- Affichage de la sélection actuelle -->
-    <div id="selectedDiag" class="form-text text-success fw-bold mt-1">
-        <?php echo htmlspecialchars($consultation['diagnostic_principal'] ?? ''); ?>
-    </div>
-</div>
                         </div>
 
                         <!-- Diagnostics différentiels -->
@@ -111,41 +103,4 @@ include __DIR__ . '/../../layouts/header.php';
     </div>
 </div>
 
-<script>
-document.getElementById('searchCim10').addEventListener('input', function(e) {
-    const query = e.target.value;
-    const resultsDiv = document.getElementById('cim10Results');
-
-    if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
-
-    fetch('<?= BASE_URL ?>consultation/search-cim10?q=' + encodeURIComponent(query))
-        .then(res => res.json())
-        .then(data => {
-            resultsDiv.innerHTML = '';
-            if (data.length > 0) {
-                resultsDiv.style.display = 'block';
-                data.forEach(item => {
-                    const a = document.createElement('a');
-                    a.className = 'list-group-item list-group-item-action';
-                    a.innerHTML = `<strong>${item.code}</strong> - ${item.description}`;
-                    a.href = '#';
-                    a.onclick = (e) => {
-                        e.preventDefault();
-                        selectDiag(item.code + ' - ' + item.description);
-                    };
-                    resultsDiv.appendChild(a);
-                });
-            } else {
-                resultsDiv.style.display = 'none';
-            }
-        });
-});
-
-function selectDiag(value) {
-    document.getElementById('diagnostic_principal').value = value;
-    document.getElementById('selectedDiag').innerText = value;
-    document.getElementById('searchCim10').value = '';
-    document.getElementById('cim10Results').style.display = 'none';
-}
-</script>
 <?php include __DIR__ . '/../../layouts/footer.php'; ?>

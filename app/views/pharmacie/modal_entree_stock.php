@@ -13,6 +13,18 @@
                         <select name="medicament_id" class="form-select shadow-sm" required>
                             <option value="">-- Choisir le produit --</option>
                             <?php
+/**
+ * SimCare+ — Dossier Médical Électronique (DME)
+ * Copyright (c) 2024-2026 Franck Simeni. Tous droits réservés.
+ * Développé pour la gestion hospitalière, et le bien être numérique des patients.
+ *
+ * Toute reproduction, modification ou distribution de ce logiciel,
+ * en tout ou en partie, sans autorisation écrite préalable de l'auteur
+ * est strictement interdite et constitue une contrefaçon.
+ *
+ * Protected under OAPI Agreement — Annexe VII · Berne Convention
+ */
+
                             // Récupération de la liste des médicaments pour le menu déroulant
                             $db = (new Database())->getConnection();
                             $all_meds = $db->query("SELECT id, nom, dosage FROM medicaments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
